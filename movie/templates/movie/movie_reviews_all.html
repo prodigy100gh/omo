@@ -1,0 +1,223 @@
+<!-- ================= templates/movie/movie_reviews_all.html (영화 리뷰 전체 보기 화면) ================= -->
+
+{% load humanize %}
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <link class="movie-favicon" rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎬</text></svg>">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OMO - {% if movie.translated_title and movie.translated_title != '힣 번역 불가' %}*{{ movie.translated_title }}{% else %}{{ movie.tmdb_title }}{% endif %} 전체 감상평</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    
+    <style>
+        body {
+            font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+            background-color: #f8fafc; 
+            color: #0f172a; 
+            height: 100vh;
+            height: 100dvh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            letter-spacing: -0.02em;
+        }
+        .fixed-header {
+            flex-shrink: 0;
+            background: #ffffff;
+            z-index: 1020;
+            border-bottom: 1px solid #f1f5f9;
+            padding-top: 0.5rem !important;
+            padding-bottom: 6px !important; 
+        }
+        .scrollable-content {
+            flex-grow: 1;
+            overflow-y: scroll;
+            -webkit-overflow-scrolling: touch;
+            padding-top: 0.5rem !important; 
+            padding-bottom: 45px;
+        }
+        .detail-card {
+            background-color: #ffffff;
+            border-radius: 16px;
+            padding: 30px;
+            border: 1px solid #f1f5f9;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+            margin-bottom: 24px;
+        }
+        .review-text {
+            font-size: 14.5px;
+            line-height: 1.6;
+            color: #333;
+            white-space: pre-wrap;
+            word-break: break-all; 
+            overflow-wrap: break-word;
+        }
+        .review-text.clamped {
+            display: -webkit-box;
+            -webkit-line-clamp: 5;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .fixed-footer-flex { flex-shrink: 0; display: flex; justify-content: center; align-items: center; position: relative; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(8px); z-index: 1020; border-top: 1px solid #f1f5f9; padding: 0 1rem !important; height: 36px; }
+
+        @media (max-width: 576px) {
+            .mobile-logo-text { font-size: 1.1rem !important; letter-spacing: -1px !important; }
+            .mobile-head-btn { padding-left: 6px !important; padding-right: 6px !important; font-size: 12px !important; }
+        }
+    </style>
+</head>
+<body>
+    <header class="fixed-header shadow-sm">
+        <div class="container px-2 px-sm-3">
+            <div class="d-flex flex-row align-items-center justify-content-start gap-2 pb-2 flex-nowrap" style="border-bottom: 1px solid transparent; width: 100%;">
+                <h4 class="fw-bold m-0 flex-shrink-0">
+                    <a href="/" class="text-dark text-decoration-none mobile-logo-text" style="letter-spacing: -0.7px; font-size: 1.2rem;">🎬 OMO</a>
+                </h4>
+                <div class="d-flex align-items-center flex-nowrap flex-grow-1 justify-content-end">
+                    <div class="d-flex align-items-center m-0 flex-nowrap" style="gap: 8px;">
+                        {% if user.is_authenticated %}
+                            <a href="{% url 'my_page' %}" class="btn btn-sm btn-dark text-nowrap fw-bold d-inline-flex align-items-center justify-content-center flex-shrink-0 mobile-head-btn" style="border-radius: 8px; font-size: 13px; background-color: #0f172a; border: none; height: 31px; padding-left: 10px; padding-right: 10px;">내 영화</a>
+                            <a href="{% url 'logout' %}" class="btn btn-sm btn-outline-secondary text-nowrap fw-bold d-inline-flex align-items-center justify-content-center flex-shrink-0 mobile-head-btn" style="border-radius: 8px; font-size: 12px; height: 31px; padding-left: 8px; padding-right: 8px; margin-left: 2px;">로그아웃</a>
+                        {% else %}
+                            <a href="{% url 'login' %}" class="btn btn-sm text-nowrap fw-bold d-inline-flex align-items-center justify-content-center flex-shrink-0 mobile-head-btn" style="border-radius: 8px; font-size: 13px; background-color: #ff2f6e; color: white; border: none; height: 31px; padding-left: 12px; padding-right: 12px;">로그인</a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="scrollable-content py-4">
+        <div class="container mb-5" style="max-width: 960px;">
+            <div class="mb-4 d-flex justify-content-between align-items-center">
+                <a href="javascript:history.back()" class="btn btn-outline-dark btn-sm fw-semibold" style="border-radius: 8px;">
+                    <i class="bi bi-arrow-left me-1"></i>뒤로가기
+                </a>
+            </div>
+
+            <div class="detail-card">
+                <div class="d-flex align-items-center gap-3 mb-4 pb-3 border-bottom">
+                    <h3 class="fw-bold m-0" style="letter-spacing: -0.5px;">
+                        {% if movie.translated_title and movie.translated_title != '힣 번역 불가' %}
+                            *{{ movie.translated_title }}
+                        {% else %}
+                            {{ movie.tmdb_title }}
+                        {% endif %}
+                        <span class="text-muted fs-5 ms-1">전체 감상평 ({{ total_count|default:all_reviews.paginator.count|default:0 }})</span>
+                    </h3>
+                </div>
+
+                <div class="d-flex flex-column gap-3" id="reviews-container">
+                    {% for rating in all_reviews %}
+                        
+                        <!-- 💡 조각 파일 호출 (전체 보기 모드 ON!) -->
+                        {% include 'partials/comp_detail_review_card.html' with is_all_view=True %}
+
+                    {% empty %}
+                        <div class="text-center text-muted py-5">
+                            작성된 공개 감상평이 없습니다.
+                        </div>
+                    {% endfor %}
+                </div>
+
+                {% if all_reviews.has_next %}
+                <div id="infinite-scroll-trigger" class="w-100 py-4 mt-2 text-center">
+                    <div class="spinner-grow text-secondary" style="width: 1.5rem; height: 1.5rem;" role="status"></div>
+                    <p class="text-muted small mt-2 fw-semibold">감상평을 더 불러오는 중입니다...</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </main>
+
+
+<!-- ================= [하단 고정 푸터 (심플 텍스트)] ================= -->
+{% include 'partials/footer.html' %}
+
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function initClampedReviews() {
+            document.querySelectorAll(".review-text.clamped").forEach(function(el) {
+                if (el.dataset.btnAdded) return;
+                if (el.scrollHeight > el.clientHeight) {
+                    el.dataset.btnAdded = "true";
+                    const btn = document.createElement("a");
+                    btn.href = "javascript:void(0)";
+                    btn.className = "text-decoration-none fw-bold d-inline-block mt-1 mb-2";
+                    btn.style.fontSize = "13px";
+                    btn.style.color = "#0d6efd";
+                    btn.textContent = "펼쳐보기";
+                    btn.onclick = function() {
+                        if (el.classList.contains("clamped")) {
+                            el.classList.remove("clamped");
+                            btn.textContent = "접기";
+                        } else {
+                            el.classList.add("clamped");
+                            btn.textContent = "펼쳐보기";
+                        }
+                    };
+                    el.parentNode.insertBefore(btn, el.nextSibling);
+                }
+            });
+        }
+
+        document.addEventListener("DOMContentLoaded", function() {
+            initClampedReviews();
+
+            let currentPageNum = {{ all_reviews.number|default:1 }};
+            const totalPages = {{ all_reviews.paginator.num_pages|default:1 }};
+            let isFetching = false;
+            const trigger = document.getElementById('infinite-scroll-trigger');
+
+            if(trigger && 'IntersectionObserver' in window) {
+                const observer = new IntersectionObserver((entries) => {
+                    if(entries[0].isIntersecting && !isFetching && currentPageNum < totalPages) {
+                        loadMoreReviews();
+                    }
+                }, { rootMargin: '300px' }); 
+                observer.observe(trigger);
+            }
+
+            function loadMoreReviews() {
+                isFetching = true;
+                currentPageNum++;
+                const url = new URL(window.location.href);
+                url.searchParams.set('page', currentPageNum);
+                
+                fetch(url.toString())
+                    .then(res => res.text())
+                    .then(html => {
+                        const parser = new DOMParser();
+                        const doc = parser.parseFromString(html, 'text/html');
+                        const newCards = doc.querySelectorAll('#reviews-container > .review-item-card');
+                        const container = document.getElementById('reviews-container');
+                        
+                        newCards.forEach(card => {
+                            container.appendChild(card);
+                        });
+                        
+                        initClampedReviews();
+                        isFetching = false;
+                        
+                        if(currentPageNum >= totalPages) {
+                            const triggerObj = document.getElementById('infinite-scroll-trigger');
+                            if(triggerObj) triggerObj.remove();
+                        }
+                    })
+                    .catch(err => {
+                        console.error('무한 스크롤 에러:', err);
+                        isFetching = false;
+                    });
+            }
+        });
+    </script>
+
+<!-- 💡 공통 로딩 오버레이 & 페이지 이동 딜레이 -->
+    {% include 'partials/loading_overlay.html' %}
+
+</body>
+</html>

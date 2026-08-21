@@ -1,0 +1,180 @@
+<!-- ================= templates/partials/script_common.html (스크립트 / 공통) ================= -->
+
+
+<script>
+/* ================= [공통 클라이언트 자바스크립트 통신 및 인터랙션 로직] ================= */
+
+// 💡 1. 네이티브 공유 및 클립보드 복사 유틸리티
+function shareNative(event, title, path) {
+    event.preventDefault(); event.stopPropagation();
+    const url = window.location.origin + path;
+    if (navigator.share) navigator.share({ title: 'OMO 추천: ' + title, url: url }).catch(err => console.error(err));
+    else navigator.clipboard.writeText(url).then(() => alert('영화 링크가 복사되었습니다!'));
+}
+
+// 💡 2. 투표수 예쁘게 변환 함수 (예: 15400 -> 15.4K)
+function formatVoteCount(votes) {
+    if (!votes) return "0";
+    const cleaned = String(votes).replace(/[^0-9]/g, ''); let num = parseInt(cleaned, 10);
+    if (isNaN(num) || num <= 0) return "0";
+    if (num >= 99500000000000) return (num / 1000000000000).toFixed(0) + "T";
+    if (num >= 995000000000) return (num / 1000000000000).toFixed(1) + "T";
+    if (num >= 99500000000) return (num / 1000000000).toFixed(0) + "B";
+    if (num >= 995000000) return (num / 1000000000).toFixed(1) + "B";
+    if (num >= 99500000) return (num / 1000000).toFixed(0) + "M";
+    if (num >= 995000) return (num / 1000000).toFixed(1) + "M";
+    if (num >= 99500) return (num / 1000).toFixed(0) + "K";
+    if (num >= 1000) return (num / 1000).toFixed(1) + "K";
+    return num.toString();
+}
+
+// 💡 3. 비동기 0.5점 단위 별점 평가 전송 (AJAX 연동 및 UI 즉각 변경)
+function sendRatingAsync(radioInput) {
+    const form = radioInput.form, url = form.action, movieId = form.getAttribute('data-movie-id');
+    const ratingContainer = form.querySelector('.star-rating'), clickedValue = radioInput.value, previousValue = ratingContainer.getAttribute('data-current');
+    let isDeletion = false;
+    
+    // 이미 체크된 별을 다시 누르면 평가 '취소(0점)'로 인식
+    if (clickedValue === previousValue) { radioInput.checked = false; isDeletion = true; }
+    
+    const formData = new FormData(form); if (isDeletion) formData.set('score', '0');
+    
+    fetch(url, { method: 'POST', body: formData, headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            // 🚀 추천 페이지(rec) 뱃지 포함, 없는 뱃지는 무시되므로 안전!
+            const targets = [`badge-container-${movieId}`, `badge-container-rec-${movieId}`, `badge-container-home-mv-${movieId}`, `badge-container-home-tv-${movieId}`];
+            
+            targets.forEach(id => {
+                const container = document.getElementById(id); if (!container) return;
+                let myBadge = container.querySelector('.my-score-badge');
+                if (data.action === 'deleted' || isDeletion) { 
+                    if (myBadge) myBadge.remove(); 
+                } else {
+                    if (myBadge) myBadge.textContent = `★ ${data.current_score}`;
+                    else { const newBadge = document.createElement('span'); newBadge.className = 'rating-badge bg-primary-subtle text-primary my-score-badge'; newBadge.textContent = `★ ${data.current_score}`; container.appendChild(newBadge); }
+                }
+            });
+            document.querySelectorAll(`form[data-movie-id="${movieId}"]`).forEach(f => {
+                const rContainer = f.querySelector('.star-rating');
+                if (rContainer) {
+                    if (data.action === 'deleted' || isDeletion) { 
+                        rContainer.setAttribute('data-current', '0'); f.querySelectorAll('input[name="score"]').forEach(input => input.checked = false); 
+                    } else { 
+                        rContainer.setAttribute('data-current', data.current_score); const radio = f.querySelector(`input[name="score"][value="${data.current_score}"]`); if (radio) radio.checked = true; 
+                    }
+                }
+            });
+
+            // 🚀 함수가 정의된 페이지에서만 10편 검사기 작동! (에러 방지 완벽 대응)
+            if (typeof window.checkTenEvaluations === 'function') {
+                window.checkTenEvaluations();
+            }
+        }
+    }).catch(err => console.error(err));
+}
+
+// 💡 4. 백그라운드 지연 한글 번역 기능 (API 호출)
+// 화면에 보이는 영어 제목들을 찾아내 구글 번역기로 조용히 넘긴 후, 결과를 스르륵(Fade-in) 덮어씁니다.
+function triggerLazyTranslationForVisibleMovies() {
+    // 현재 탭이 TV면 아예 함수 중단 (all_list 등에서 사용 시)
+    const currentType = document.getElementById('hidden-type-val')?.value || 'movie';
+    if (currentType === 'tv') return;
+
+    const forms = document.querySelectorAll('form.rating-async-form');
+    const ids = new Set();
+    forms.forEach(form => {
+        const parentCard = form.closest('.movie-card');
+        if (!parentCard) return;
+        
+        // 🚫 [절대 방어막] 카드 안의 링크가 '/tv/'를 포함하면 무조건 TV 시리즈이므로 번역에서 제외!
+        const linkEl = parentCard.querySelector('.card-link');
+        if (linkEl && linkEl.getAttribute('href').includes('/tv/')) return;
+        
+        // (혹시 링크가 없는 형태의 카드를 위한 기존 방어막도 유지)
+        if (parentCard.id.includes('-tv-') || parentCard.closest('#ai-tv-recommendations')) return;
+        
+        const titleEl = parentCard.querySelector('.movie-title');
+        if (!titleEl) return;
+        const text = titleEl.textContent.trim();
+        if (!/[가-힣]/.test(text) && !text.startsWith('*')) {
+            const movieId = form.getAttribute('data-movie-id');
+            if (movieId) ids.add(movieId);
+        }
+    });
+    
+    if (ids.size === 0) return;
+    const idArray = Array.from(ids);
+    for (let i = 0; i < idArray.length; i += 50) {
+        const chunk = idArray.slice(i, i + 50);
+        const params = new URLSearchParams();
+        chunk.forEach(id => params.append('ids', id));
+        fetch(`/api/lazy-translate/?${params.toString()}`)
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'success' && data.translations) {
+                    for (const [id, translated] of Object.entries(data.translations)) {
+                        const targetForms = document.querySelectorAll(`form[data-movie-id="${id}"]`);
+                        targetForms.forEach(f => {
+                            const parentCard = f.closest('.movie-card');
+                            if (parentCard) {
+                                // 덮어쓸 때도 2차 확인
+                                const linkEl = parentCard.querySelector('.card-link');
+                                if (linkEl && linkEl.getAttribute('href').includes('/tv/')) return;
+
+                                const titleEl = parentCard.querySelector('.movie-title');
+                                if (titleEl && /[가-힣]/.test(translated)) {
+                                    titleEl.textContent = `*${translated}`;
+                                    titleEl.setAttribute('title', translated);
+                                    parentCard.setAttribute('data-translated-title', translated);
+                                }
+                            }
+                        });
+                    }
+                }
+            })
+            .catch(err => console.error(err));
+    }
+}
+
+// 💡 5. 찜하기(보고싶어요) 하트 아이콘 토글 통신
+function toggleWatchlist(event, btnElement) {
+    event.preventDefault(); event.stopPropagation(); 
+    const movieId = btnElement.getAttribute('data-movie-id');
+    
+    // 💡 [핵심 추가] 버튼에 달아둔 꼬리표(data-type)를 읽어옵니다!
+    const mediaType = btnElement.getAttribute('data-type') || 'movie'; 
+    
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || document.querySelector('input[name="csrfmiddlewaretoken"]')?.value;
+    if (!csrfToken) { alert("로그인이 필요한 기능입니다."); window.location.href = "/login/"; return; }
+
+    // 💡 [핵심 수정] 서버로 요청할 때 주소 뒤에 ?type=tv 형식으로 꼬리표를 달아서 보냅니다!
+    fetch(`/movie/${movieId}/watchlist/?type=${mediaType}`, {
+        method: 'POST',
+        headers: { 'X-Requested-With': 'XMLHttpRequest', 'X-CSRFToken': csrfToken, 'Content-Type': 'application/json' }
+    })
+    .then(response => {
+        if (response.redirected || response.status === 401 || response.status === 403) { window.location.href = "/login/"; throw new Error("로그인 필요"); }
+        return response.json();
+    })
+    .then(data => {
+        if (data.status === 'success') {
+            const icon = btnElement.querySelector('i');
+            if (data.is_watchlisted) { 
+                btnElement.classList.add('active'); 
+                icon.classList.remove('bi-bookmark'); 
+                icon.classList.add('bi-bookmark-fill'); 
+            } 
+            else { 
+                btnElement.classList.remove('active'); 
+                icon.classList.remove('bi-bookmark-fill'); 
+                icon.classList.add('bi-bookmark'); 
+            }
+            
+            // 💡 이 부분에 있던 checkTenEvaluations(); 호출을 완전히 삭제했습니다!
+        } else { console.error("찜하기 실패:", data.message); }
+    })
+    .catch(err => console.error("찜하기 네트워크 에러:", err));
+}
+</script>

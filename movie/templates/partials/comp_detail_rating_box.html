@@ -1,0 +1,93 @@
+<!-- ================= templates/partials/comp_detail_rating_box.html (상세페이지 평점 박스) ================= -->
+{% load humanize %}
+
+<!-- 💡 [SECTION: 평점 그라데이션 박스] -->
+<!-- 영화(movie_detail)와 시리즈(tv_detail) 양쪽에서 'item'이라는 공용 변수로 묶어서 화면을 그립니다. -->
+<div class="rating-box">
+    <div class="row align-items-center g-3">
+        
+        <!-- ================= [좌측 영역: 글로벌 평점 정보] ================= -->
+        <div class="col-sm-5">
+            <div class="row g-2">
+                <!-- 1. IMDb 평점 -->
+                <div class="col-6 col-sm-12 mb-sm-2">
+                    <span class="small text-white-50"><i class="bi bi-star-fill text-warning me-1"></i>IMDb 평점</span>
+                    <div class="d-flex align-items-baseline gap-1.5 mt-1">
+                        <!-- 🚀 movie/series 대신 item.imdb_rating으로 통일하여 출력 -->
+                        <span class="fs-2 fw-bold">{{ item.imdb_rating|floatformat:1|default:"0.0" }}</span>
+                        <span class="text-white-50" style="font-size: 14px;">&nbsp;/ 10</span>
+                    </div>
+                    <span class="small text-white-50">👥 평가수 : {{ item.imdb_vote_count|default:0|intcomma }}</span>
+                </div>
+                
+                <!-- 2. TMDB 평점 -->
+                <div class="col-6 col-sm-12">
+                    <span class="small text-white-50"><i class="bi bi-star-fill text-warning me-1"></i>TMDB 평점</span>
+                    <div class="d-flex align-items-baseline gap-1.5 mt-1">
+                        <!-- 🚀 movie/series 대신 item.tmdb_rating으로 통일하여 출력 -->
+                        <span class="fs-4 fw-bold">{{ item.tmdb_rating|floatformat:1|default:"0.0" }}</span>
+                        <span class="text-white-50" style="font-size: 12px;">&nbsp;/ 10</span>
+                    </div>
+                    <span class="small text-white-50">👥 평가수 : {{ item.tmdb_vote_count|default:0|intcomma }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= [우측 영역: OMO 평점 및 별점 입력 폼] ================= -->
+        <div class="col-sm-7 border-start border-secondary-subtle ps-sm-4">
+            
+            <!-- 3. OMO 전체 평균 평점 -->
+            <div class="mb-3">
+                <span class="small text-white-50"><i class="bi bi-star-fill text-danger me-1"></i>OMO 평점</span>
+                <div class="d-flex align-items-baseline gap-1.5 mt-1">
+                    <span class="fs-4 fw-bold text-white" id="omo-avg-text">{{ omo_avg_score|floatformat:1|default:"0.0" }}</span>
+                    <span class="text-white-50" style="font-size: 12px;">&nbsp;/ 10</span>
+                </div>
+                <span class="small text-white-50" id="omo-vote-text">👥 평가자 수 : {{ omo_vote_count|default:0|intcomma }}</span>
+            </div>
+            
+            <!-- 4. 내가 매긴 별점 폼 -->
+            <!-- 🚀 is_tv 값에 따라 전송할 URL(rate_tv vs rate_movie)을 영리하게 분기 처리합니다 -->
+            <form id="rating-form" data-url="{% if is_tv %}{% url 'rate_tv' item.id %}{% else %}{% url 'rate_movie' item.id %}{% endif %}">
+                {% csrf_token %}
+                
+                <!-- 🚀 TV 시리즈일 경우 백엔드에서 통신을 구분할 수 있게 꼬리표(type=tv)를 숨겨서 달아줍니다 -->
+                {% if is_tv %}
+                <input type="hidden" name="type" value="tv">
+                {% endif %}
+
+                <div class="d-flex flex-column gap-1">
+                    <span class="small text-white-50"><i class="bi bi-heart-fill text-danger me-1"></i>내가 기록한 평점</span>
+                    <!-- 💡 고정 높이(height: 40px)와 수직 중앙 정렬 장착으로 흔들림 방지 -->
+                    <div id="my-score-view-box" class="mb-1 d-flex align-items-center" style="height: 40px;">
+                        {% if my_score and my_score > 0 %}
+                            <div class="d-flex align-items-baseline gap-1.5"><span class="fs-2 fw-bold text-warning" id="rating-score-view">{{ my_score }}</span><span class="text-white-50" style="font-size: 14px;">&nbsp;/ 10</span></div>
+                        {% else %}
+                            <div class="fs-4 fw-bold text-white-50" id="rating-score-view">평가 안 함</div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <!-- 별점 라디오 버튼 (JS 연동용) -->
+                <div class="mt-1">
+                    <div class="star-rating-container">
+                        <div class="star-rating-bg">★★★★★</div>
+                        <div class="star-rating-fill" id="star-fill-layer">★★★★★</div>
+                        <div class="star-rating-inputs">
+                            <input type="radio" name="score" value="1" title="1점" {% if my_score == 1 %}checked{% endif %}>
+                            <input type="radio" name="score" value="2" title="2점" {% if my_score == 2 %}checked{% endif %}>
+                            <input type="radio" name="score" value="3" title="3점" {% if my_score == 3 %}checked{% endif %}>
+                            <input type="radio" name="score" value="4" title="4점" {% if my_score == 4 %}checked{% endif %}>
+                            <input type="radio" name="score" value="5" title="5점" {% if my_score == 5 %}checked{% endif %}>
+                            <input type="radio" name="score" value="6" title="6점" {% if my_score == 6 %}checked{% endif %}>
+                            <input type="radio" name="score" value="7" title="7점" {% if my_score == 7 %}checked{% endif %}>
+                            <input type="radio" name="score" value="8" title="8점" {% if my_score == 8 %}checked{% endif %}>
+                            <input type="radio" name="score" value="9" title="9점" {% if my_score == 9 %}checked{% endif %}>
+                            <input type="radio" name="score" value="10" title="10점" {% if my_score == 10 %}checked{% endif %}>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

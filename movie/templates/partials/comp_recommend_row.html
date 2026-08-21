@@ -1,0 +1,78 @@
+<!-- ================= templates/partials/comp_recommend_row.html (home화면 추천작 노출 부분) ================= -->
+
+<!-- 💡 [초보자 안내] 이 코드는 혼자서 화면을 그리지 않고, 메인 화면(home.html)에서 AI 추천을 불러올 때 '조각'으로 끼워 넣는 HTML입니다. -->
+<!-- 🚨 [핵심 업그레이드] views.py에서 보낸 'is_tv', 'is_fallback', 'is_keyword_rec' 신호를 감지하여 완벽하게 제목이 변신합니다! -->
+<div class="rec-section-wrapper">
+    <!-- 💡 [방탄 레이아웃 적용] d-flex flex-nowrap으로 좌우 강제 분리 & 모바일에서 안내문구 숨김 -->
+    <div class="rec-header d-flex justify-content-between align-items-center flex-nowrap w-100" {% if is_anonymous %}style="margin-bottom: 2px !important; gap: 8px;"{% else %}style="gap: 8px;"{% endif %}>
+        
+        <!-- 왼쪽: 메인 제목 & 보조 문구 -->
+        <div class="rec-title d-flex align-items-baseline text-truncate" style="min-width: 0; gap: 6px;">
+            
+            <h5 class="fw-bold m-0 text-dark text-nowrap" style="letter-spacing: -0.5px; font-size: 1.15rem;">
+                <!-- 🚀 [추가됨] 키워드 연관작 모드일 때의 제목 -->
+                {% if is_keyword_rec %}
+                    <!-- 💡 is_tv 값에 따라 영화와 시리즈 이름을 완벽하게 분리해서 표기합니다! -->
+                    {% if is_tv %}
+                        🏷️ #{{ keyword }} 연관 시리즈
+                    {% else %}
+                        🏷️ #{{ keyword }} 연관 영화
+                    {% endif %}
+                    <span class="text-muted fw-normal ms-1 d-none d-sm-inline" style="font-size: 0.85rem; letter-spacing: 0;">(IMDb 평가순)</span>
+                <!-- 💡 기존 홈 화면 추천 모드일 때의 제목 -->
+                {% else %}
+                    {% if not is_anonymous %}
+                        {% if is_fallback %}
+                            {% if is_tv %}📺 [시리즈] 기본 추천 10편{% else %}🔥 [영화] 기본 추천 10편{% endif %}
+                            <span class="text-muted fw-normal ms-1 d-none d-sm-inline" style="font-size: 0.85rem; letter-spacing: 0;">(10건 이상 평가하고 맞춤 AI 추천 받기)</span>
+                        {% else %}
+                            {% if is_tv %}✨ [시리즈] AI 맞춤형 추천{% else %}✨ [영화] AI 맞춤형 추천{% endif %}
+                        {% endif %}
+                    {% else %}
+                        {% if is_tv %}📺 [시리즈] 기본 추천 10편{% else %}🔥 [영화] 기본 추천 10편{% endif %}
+                        <span class="text-muted fw-normal ms-1 d-none d-sm-inline" style="font-size: 0.85rem; letter-spacing: 0;">(로그인하고 맞춤 AI 추천 받기)</span>
+                    {% endif %}
+                {% endif %}
+            </h5>
+
+        </div>
+
+        <!-- 오른쪽: 더 보기 버튼 + 화살표 (flex-shrink-0으로 찌그러짐 원천 차단) -->
+        <div class="d-flex align-items-center gap-1 flex-shrink-0">
+            
+            <!-- 🚀 [추가됨] 키워드 연관작 모드가 '아닐 때만' 더 보기 버튼 노출 -->
+            {% if not is_keyword_rec %}
+                {% if is_tv %}
+                <a href="{% url 'rec_more_tv' %}{% if request.GET.urlencode %}?{{ request.GET.urlencode }}{% endif %}" 
+                    class="btn btn-light fw-bold d-inline-block text-center text-nowrap" 
+                    style="font-size: 11px; border-radius: 10px; border: 1px solid #cbd5e1; height: 24px; line-height: 22px; padding: 0 10px; color: #1e293b; text-decoration: none;">더 보기</a>
+                {% else %}
+                <a href="{% url 'rec_more_movies' %}{% if request.GET.urlencode %}?{{ request.GET.urlencode }}{% endif %}" 
+                    class="btn btn-light fw-bold d-inline-block text-center text-nowrap" 
+                    style="font-size: 11px; border-radius: 10px; border: 1px solid #cbd5e1; height: 24px; line-height: 22px; padding: 0 10px; color: #1e293b; text-decoration: none;">더 보기</a>
+                {% endif %}
+            {% endif %}
+
+            <!-- 기존 화살표 버튼 그룹 (항상 노출됨) -->
+            <!-- 🚀 [핵심 수정] home.html 스크립트가 찾을 수 있도록 ID를 명확하게 매칭! -->
+            <div class="rec-btn-group d-flex gap-1 ms-1">
+                <button type="button" class="rec-scroll-btn" id="{% if is_tv %}btn-tv-left{% else %}btn-movie-left{% endif %}"><i class="bi bi-chevron-left" style="font-size: 12px;"></i></button>
+                <button type="button" class="rec-scroll-btn" id="{% if is_tv %}btn-tv-right{% else %}btn-movie-right{% endif %}"><i class="bi bi-chevron-right" style="font-size: 12px;"></i></button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 💡 [핵심 해결] 컨테이너 ID도 TV 시리즈일 때는 'tv-scroll-container'로 분리! -->
+    <div class="recommended-scroll-container position-relative" id="{% if is_tv %}tv-scroll-container{% else %}recommended-scroll-container{% endif %}">
+	{% for movie in recommended_movies %}
+            <!-- 💡 홈 화면과 100% 동일한 가로폭(width) 강제 고정 클래스 부여 -->
+	    <div class="recommended-item" style="flex: 0 0 auto; width: 145px;">
+	        {% if is_tv %}
+	            {% include 'partials/comp_movie_card.html' with movie=movie card_prefix='home-tv-' current_type='tv' %}
+	        {% else %}
+	            {% include 'partials/comp_movie_card.html' with movie=movie card_prefix='home-mv-' current_type='movie' %}
+	        {% endif %}
+	    </div>
+	{% endfor %}
+    </div>
+</div>

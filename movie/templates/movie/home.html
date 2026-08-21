@@ -1,0 +1,365 @@
+<!-- ================= templates/movie/home.html (home 화면) ================= -->
+
+{% load humanize %}
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <!-- ================= [SECTION 1: 파비콘 및 기본 메타 설정] ================= -->
+    <!-- 💡 브라우저 탭에 표시될 아이콘과 모바일 기기 최적화(viewport)를 설정합니다. -->
+    <link class="movie-favicon" rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎬</text></svg>">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OMO - 오늘 모 볼까?! (AI 맞춤 추천)</title>
+    
+    <!-- 부트스트랩 5 CSS 및 아이콘 라이브러리 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    
+    <style>
+        /* ================= [SECTION 2: 전역 기본 레이아웃 및 화면 전환 효과] ================= */
+        /* 💡 화면 전체는 고정(overflow: hidden)시키고, 본문(.scrollable-content) 영역만 독립적으로 스크롤되도록 만듭니다. */
+        body { font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, sans-serif; background-color: #f8fafc; color: #0f172a; height: 100vh; height: 100dvh; overflow: hidden; display: flex; flex-direction: column; letter-spacing: -0.02em; transition: opacity 0.15s ease-in-out; }
+        
+        /* 💡 링크 이동 시 화면 전체가 부드럽게 반투명해지는 페이드아웃 효과 */
+        body.page-transitioning { opacity: 0.5; pointer-events: none; }
+        
+        /* 상단 고정 헤더와 하단 고정 푸터 */
+        .fixed-header { flex-shrink: 0; background: #ffffff; z-index: 1020; border-bottom: 1px solid #f1f5f9; padding-top: 0.5rem !important; padding-bottom: 6px !important; }
+        .scrollable-content { flex-grow: 1; overflow-y: scroll; -webkit-overflow-scrolling: touch; padding-bottom: 45px; }
+        .fixed-footer-flex { flex-shrink: 0; display: flex; justify-content: center; align-items: center; position: relative; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(8px); z-index: 1020; border-top: 1px solid #f1f5f9; padding: 0 1rem !important; height: 36px; }
+        
+        /* ================= [SECTION 3: 헤더 숨김 폼 및 드롭다운 UI 스타일] ================= */
+        /* 💡 홈 화면에는 실제 필터 메뉴가 없지만, '전체 목록' 페이지와의 레이아웃 100% 일치를 위해 숨김 처리된 UI 스타일입니다. */
+        .form-check-input { border: 1.5px solid #cbd5e1; cursor: pointer; transition: all 0.2s ease; }
+        .form-check-input:checked { background-color: #334155; border-color: #334155; }
+        .filter-dropdown-wrapper { position: relative; width: 76px; flex-shrink: 0; }
+        .filter-dropdown-button { width: 100%; display: inline-flex !important; align-items: center !important; justify-content: space-between !important; white-space: nowrap; border: 1px solid #e2e8f0 !important; background-color: #ffffff !important; color: #334155 !important; transition: all 0.2s ease; height: 28px !important; padding: 0 4px !important; font-size: 11.5px !important; line-height: normal !important; margin: 0 !important; }
+        .filter-dropdown-button:hover { border-color: #cbd5e1 !important; background-color: #f8fafc !important; }
+        .filter-dropdown-menu, .ott-dropdown-menu { max-height: none !important; overflow-y: visible !important; padding: 12px !important; border: 1px solid #e2e8f0; border-radius: 12px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.05); }
+        .filter-dropdown-menu { min-width: 350px !important; max-width: calc(100vw - 32px) !important; }
+        .ott-dropdown-menu { min-width: 220px !important; max-width: calc(100vw - 32px) !important; }
+        .filter-grid-container { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px 8px; max-height: 350px; overflow-y: auto; overflow-x: hidden; padding-right: 4px; }
+        .ott-grid-container { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px 8px; max-height: 350px; overflow-y: auto; overflow-x: hidden; padding-right: 4px; }
+        .filter-grid-container::-webkit-scrollbar, .ott-grid-container::-webkit-scrollbar { width: 6px; }
+        .filter-grid-container::-webkit-scrollbar-thumb, .ott-grid-container::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 4px; }
+        .filter-item { position: relative !important; padding: 4px 6px 4px 24px !important; border-radius: 6px; transition: background-color 0.15s ease; display: flex; align-items: center; margin-left: 0 !important; }
+        .filter-item:hover { background-color: #f1f5f9; }
+        .filter-cb { position: absolute !important; left: 6px !important; top: 50% !important; transform: translateY(-50%) !important; width: 14px !important; height: 14px !important; margin: 0 !important; flex-shrink: 0; }
+        .filter-label-text { font-size: 12px; color: #334155; cursor: pointer; user-select: none; line-height: 1.2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-left: 0 !important; display: flex; align-items: center; }
+        .sort-btn { display: inline-flex !important; align-items: center !important; justify-content: center !important; height: 28px !important; padding: 0 !important; line-height: normal !important; margin: 0 !important; white-space: nowrap !important; }
+        .sort-btn.active { background-color: #1e293b !important; color: #ffffff !important; border-color: #1e293b !important; font-weight: 700; }
+
+        /* ================= [SECTION 4: 프리미엄 AI 추천 가로 슬라이더 및 히어로 배너] ================= */
+        /* 🚀 [디자인 개편 포인트 1] 투박한 박스와 그림자를 완벽히 제거하여 화면과 자연스럽게 녹아들게 설정 */
+        .rec-section-wrapper { position: relative; margin-bottom: 40px !important; /* 🚀 [디자인 개편 포인트 2] 영역 간 간격을 4px -> 40px로 2배 이상 시원하게 확장 */ padding: 0 !important; background: transparent !important; border: none !important; box-shadow: none !important; overflow: visible; }
+        .rec-header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 12px; padding: 0 4px; }
+        
+        /* 🚀 [디자인 개편 포인트 3] 넷플릭스 스타일로 섹션 타이틀 크기를 키우고 굵고 세련되게 변경 */
+        .rec-title { margin: 0; font-size: 1.3rem; font-weight: 800; letter-spacing: -0.6px; color: #0f172a; display: flex; align-items: center; }
+        
+        /* 더 보기 버튼 미니멀 프리미엄 디자인 */
+        .rec-more-btn { background-color: #f1f5f9; color: #475569; padding: 4px 10px; font-size: 11px; border-radius: 20px; text-decoration: none; font-weight: 700; transition: all 0.2s ease; display: inline-flex; align-items: center; }
+        .rec-more-btn:hover { background-color: #e2e8f0; color: #0f172a; }
+        
+        /* 슬라이더 좌우 스크롤 화살표 프리미엄 디자인 */
+        .rec-btn-group { display: flex; gap: 6px; }
+        .rec-scroll-btn { width: 28px; height: 28px; border-radius: 50%; border: 1px solid #e2e8f0; background-color: rgba(255, 255, 255, 0.9); color: #475569; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; cursor: pointer; transition: all 0.2s ease; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+        .rec-scroll-btn:hover { background-color: #ffffff; border-color: #cbd5e1; color: #0f172a; transform: scale(1.05); box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        .rec-scroll-btn:active { transform: scale(0.95); }
+
+	/* 🚀 [스마트 레이아웃] all_list.html의 그리드(g-1, 3/4/5열)와 100% 동일한 수학적 크기 계산 */
+        .recommended-scroll-container { 
+            display: flex; 
+            gap: 4px !important; /* all_list의 g-1 간격(4px)과 완벽 동일 */
+            overflow-x: auto; 
+            scroll-behavior: smooth; 
+            padding: 4px 0 16px 0 !important; 
+            margin: 0; 
+            cursor: grab; 
+            user-select: none; 
+            -webkit-overflow-scrolling: touch; 
+            scrollbar-width: none; 
+        }
+        .recommended-scroll-container::-webkit-scrollbar { display: none; }
+        .recommended-scroll-container:active { cursor: grabbing; }
+        
+        /* 모바일 (기본 3열: all_list의 row-cols-3 비율 100% 동기화) */
+        .recommended-item { flex: 0 0 calc((100% - 8px) / 3) !important; max-width: calc((100% - 8px) / 3) !important; padding: 0 !important; }
+        
+        /* 태블릿 (4열: all_list의 row-cols-md-4 비율 100% 동기화) */
+        @media (min-width: 768px) {
+            .recommended-item { flex: 0 0 calc((100% - 12px) / 4) !important; max-width: calc((100% - 12px) / 4) !important; }
+        }
+        
+        /* 데스크탑 (5열: all_list의 row-cols-lg-5 비율 100% 동기화) */
+        @media (min-width: 992px) {
+            .recommended-item { flex: 0 0 calc((100% - 16px) / 5) !important; max-width: calc((100% - 16px) / 5) !important; }
+        }
+        
+        /* 🚀 히어로 배너(최신 화제작) 레이아웃 고도화 및 하단 여백 대폭 확장 */
+        .hero-banner { position: relative; width: 100%; height: 35vh; min-height: 250px; max-height: 380px; border-radius: 16px; overflow: hidden; cursor: pointer; display: block; border: 1px solid #f1f5f9; margin-bottom: 32px !important; box-shadow: 0 10px 20px -5px rgba(0,0,0,0.05); }
+        .hero-img { width: 100%; height: 100%; object-fit: cover; object-position: center 25%; transition: transform 0.5s ease; }
+        .hero-banner:hover .hero-img { transform: scale(1.05); }
+        .hero-overlay { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(to top, rgba(15,23,42,0.95) 0%, rgba(15,23,42,0.3) 50%, rgba(0,0,0,0.1) 100%); }
+        .hero-content { position: absolute; bottom: 20px; left: 20px; right: 20px; z-index: 2; }
+        
+        /* 💡 데이터 로딩 전 반짝이는 스켈레톤(뼈대) 애니메이션 UI */
+        @keyframes skeleton-shimmer { 0% { background-color: #f1f5f9; } 50% { background-color: #e2e8f0; } 100% { background-color: #f1f5f9; } }
+        .skeleton-ui { animation: skeleton-shimmer 1.5s infinite ease-in-out; }
+        
+        /* ================= [SECTION 5: 모바일 화면 반응형 최적화] ================= */
+        @media (max-width: 576px) {
+            .mobile-logo-text { font-size: 1.1rem !important; letter-spacing: -1px !important; }
+            .mobile-search-input { width: 75px !important; font-size: 12px !important; }
+            .mobile-head-btn { padding-left: 6px !important; padding-right: 6px !important; font-size: 12px !important; }
+            .mobile-head-btn.btn-outline-danger { padding-left: 4px !important; padding-right: 4px !important; }
+            .mobile-form-gap { gap: 4px !important; }
+            
+            /* 모바일에서도 시원한 여백(32px)을 보장합니다. */
+            .rec-section-wrapper { margin-bottom: 32px !important; padding: 0 !important; }
+            .rec-title { font-size: 1.15rem; }
+            .hero-banner { margin-bottom: 24px !important; height: 20vh !important; min-height: 150px !important; max-height: 200px !important; }
+            
+            .rating-badge-container { gap: 2px !important; }
+            .filter-dropdown-wrapper { width: 68px !important; }
+            .filter-dropdown-button { font-size: 10.5px !important; padding: 0 2px !important; letter-spacing: -0.5px; }
+            .hero-content { bottom: 12px !important; left: 14px !important; right: 14px !important; }
+            .hero-content h1 { font-size: 1.3rem !important; }
+            .hero-content p { font-size: 11.5px !important; }
+        }
+    </style>
+        
+        <!--  ================= [SECTION 6: 영화/시리즈 그리드 카드 및 뱃지 UI] ================= -->
+	<!-- 💡 영화 카드 공통 CSS 불러오기 -->
+	{% include 'partials/comp_movie_card_style.html' %}
+        
+</head>
+<body>
+
+<!-- ================= [SECTION 7: 상단 고정 헤더 (전체목록 이동 폼 연동)] ================= -->
+<!-- 💡 홈 화면에는 실제 필터 그리드가 없으므로, 검색어 입력이나 조건 설정 시 
+     자동으로 필터 값들을 hidden으로 담아 'all_list'(전체목록) 페이지로 전송(Action)합니다. -->
+<header class="fixed-header shadow-sm">
+    <div class="container px-2 px-sm-3">
+        {% include 'partials/layout_top_nav.html' %}
+    </div>
+</header>
+
+<!-- ================= [SECTION 8: 메인 본문 (화제작 배너 + AI 2대 추천 구역)] ================= -->
+<main class="scrollable-content pt-2 py-4">
+    <div class="container">
+        
+        <!-- 💡 [구역 A] 최신 화제작 히어로 배너 (검색어나 필터가 없을 때 가장 상단에 큼직하게 표시) -->
+        {% if hero_movie and not search_query and filter_submitted != 'true' and not sort_by %}
+        <div class="hero-banner shadow-sm" onclick="location.href='{% url 'movie_detail' hero_movie.id %}'">
+            <img src="{% if hero_movie.backdrop_path %}https://image.tmdb.org/t/p/w1280{{ hero_movie.backdrop_path }}{% elif hero_movie.tmdb_poster_url %}{{ hero_movie.tmdb_poster_url }}{% else %}https://image.tmdb.org/t/p/w1280{{ hero_movie.poster_path }}{% endif %}" class="hero-img" alt="{{ hero_movie.tmdb_title }}">
+            <div class="hero-overlay"></div>
+            <div class="hero-content">
+                <span class="badge bg-danger mb-2 px-2 py-1 shadow-sm" style="font-size: 11px;">🔥 최신 화제작</span>
+                <h1 class="fw-bold mb-1 text-truncate text-white" style="font-size: 1.8rem; letter-spacing: -1px; text-shadow: 0 2px 4px rgba(0,0,0,0.5);">
+                    {% if hero_movie.translated_title and hero_movie.translated_title != '힣 번역 불가' %}*{{ hero_movie.translated_title }}{% else %}{{ hero_movie.tmdb_title }}{% endif %}
+                </h1>
+                <p class="mb-0 text-white-50 fw-semibold" style="font-size: 13px; text-shadow: 0 1px 2px rgba(0,0,0,0.5);">
+                    {{ hero_movie.display_year|default:"-" }} · {{ hero_movie.short_genre|default:"장르 미상" }} · 🎬 ★ {{ hero_movie.imdb_rating|floatformat:1|default:"0.0" }} · 👥 <span class="hero-vote-count" data-votes="{{ hero_movie.imdb_vote_count|default:0 }}">0</span>
+                </p>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- 💡 [구역 B] 맞춤형 AI 영화 추천 슬라이더 -->
+        <div id="ai-recommendations">
+            <div class="rec-section-wrapper">        
+                <!-- 💡 [방탄 레이아웃] flex-nowrap으로 좌우 요소를 강제로 한 줄에 묶습니다 -->
+			<div class="d-flex justify-content-between align-items-center mb-2 w-100 flex-nowrap" style="gap: 8px;">
+        
+		        <!-- 왼쪽: 메인 제목 및 안내 문구 -->
+		        <div class="d-flex align-items-baseline text-truncate" style="min-width: 0; gap: 6px;">
+		            <h5 class="fw-bold m-0 text-dark text-nowrap" style="letter-spacing: -0.5px; font-size: 1.15rem;">
+		                {% if user.is_authenticated %}
+		                    {% if is_fallback %}
+		                        🔥 [영화] 기본 추천 10편 <span class="text-muted fw-normal ms-1" style="font-size: 0.85rem; letter-spacing: 0;">(10건 이상 평가하고 맞춤 AI 추천 받기)</span>
+		                    {% else %}
+		                        ✨ [영화] AI 맞춤형 추천
+		                    {% endif %}
+		                {% else %}
+		                    🔥 [영화] 기본 추천 10편 <span class="text-muted fw-normal ms-1" style="font-size: 0.85rem; letter-spacing: 0;">(로그인하고 맞춤 AI 추천 받기)</span>
+		                {% endif %}
+		            </h5>
+		        </div>
+        
+        <!-- 오른쪽: 더 보기 버튼 & 화살표 (flex-shrink-0으로 절대 찌그러지지 않음) -->
+        <div class="d-flex align-items-center gap-1 flex-shrink-0">
+            <a href="{% url 'all_list' %}?type=movie" 
+               class="btn btn-light fw-bold d-inline-block text-center text-nowrap me-1" 
+               style="font-size: 11px; border-radius: 10px; border: 1px solid #cbd5e1; height: 24px; line-height: 22px; padding: 0 10px; color: #1e293b; text-decoration: none;">더 보기</a>
+            
+            <!-- 💡 주의: 아래 화살표 버튼의 id(예: btn-movie-left)는 기존에 쓰시던 그대로 유지해 주세요! -->
+            <button type="button" id="btn-movie-left" class="btn btn-sm btn-light border rounded-circle d-flex align-items-center justify-content-center" style="width: 26px; height: 26px; padding: 0;"><i class="bi bi-chevron-left" style="font-size: 12px;"></i></button>
+            <button type="button" id="btn-movie-right" class="btn btn-sm btn-light border rounded-circle d-flex align-items-center justify-content-center" style="width: 26px; height: 26px; padding: 0;"><i class="bi bi-chevron-right" style="font-size: 12px;"></i></button>
+        </div>
+        
+    </div>
+                
+                <div class="recommended-scroll-container position-relative" id="movie-scroll-container" style="min-height: 230px;">
+                    <!-- JS 통신 전 공간을 확보해두는 임시 투명 카드 -->
+                    {% for i in "0123456789" %}
+                    <div class="recommended-item" style="visibility: hidden;">
+                        <div class="movie-card h-100"><a href="#" class="card-link flex-grow-1"><div class="poster-wrapper"></div></a></div>
+                    </div>
+                    {% endfor %}
+
+                    <!-- 💡 백엔드에서 추천 연산을 수행하는 동안 보여줄 세련된 투명 스켈레톤 로딩 바 -->
+                    <div id="ai-loading-overlay" class="position-absolute" style="top: 0; bottom: 0; left: 0; right: 0; border-radius: 12px; z-index: 5; overflow: hidden; padding: 4px 2px 10px 2px; background: transparent;">
+                        <div class="d-flex gap-2.5 h-100 px-2 pt-2">
+                            {% for i in "123456" %}
+                            <div style="flex: 0 0 165px; max-width: 165px; display: flex; flex-direction: column; gap: 8px;">
+                                <div class="skeleton-ui" style="width: 100%; padding-top: 140%; border-radius: 12px;"></div>
+                                <div class="skeleton-ui" style="width: 80%; height: 16px; border-radius: 4px;"></div>
+                                <div class="skeleton-ui" style="width: 100%; height: 34px; border-radius: 6px; margin-top: auto;"></div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        <div class="position-absolute d-flex flex-column align-items-center justify-content-center w-100 h-100" style="top: 0; left: 0; background: linear-gradient(to bottom, rgba(248,250,252,0.6), rgba(248,250,252,1)); z-index: 10;">
+                            <div class="spinner-grow text-primary mb-3" role="status" style="width: 2.5rem; height: 2.5rem; opacity: 0.8;"></div>
+                            <p class="m-0 text-dark fw-bold" style="font-size: 15px; letter-spacing: -0.5px;">AI가 취향을 정밀 분석 중입니다...</p>
+                            <p class="text-muted mt-1" style="font-size: 13px;">잠시만 기다려주세요 ✨</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 💡 [구역 C] 맞춤형 AI TV 시리즈 추천 슬라이더 -->
+        <div id="ai-tv-recommendations">
+            <div class="rec-section-wrapper">        
+                <!-- 💡 [방탄 레이아웃] flex-nowrap으로 좌우 요소를 강제로 한 줄에 묶습니다 -->
+                <div class="d-flex justify-content-between align-items-center mb-2 w-100 flex-nowrap" style="gap: 8px;">
+                    
+                    <!-- 왼쪽: 메인 제목 및 안내 문구 -->
+	        <div class="d-flex align-items-baseline text-truncate" style="min-width: 0; gap: 6px;">
+	            <h5 class="fw-bold m-0 text-dark text-nowrap" style="letter-spacing: -0.5px; font-size: 1.15rem;">
+	                {% if user.is_authenticated %}
+	                    {% if is_fallback %}
+	                        📺 [시리즈] 기본 추천 10편 <span class="text-muted fw-normal ms-1" style="font-size: 0.85rem; letter-spacing: 0;">(10건 이상 평가하고 맞춤 AI 추천 받기)</span>
+	                    {% else %}
+	                        ✨ [시리즈] AI 맞춤형 추천
+	                    {% endif %}
+	                {% else %}
+	                    📺 [시리즈] 기본 추천 10편 <span class="text-muted fw-normal ms-1" style="font-size: 0.85rem; letter-spacing: 0;">(로그인하고 맞춤 AI 추천 받기)</span>
+	                {% endif %}
+	            </h5>
+	        </div>
+            
+                    <!-- 오른쪽: 더 보기 버튼 & 화살표 (flex-shrink-0으로 절대 찌그러지지 않음) -->
+                    <div class="d-flex align-items-center gap-1 flex-shrink-0">
+                        <a href="{% url 'all_list' %}?type=tv" 
+		               class="btn btn-light fw-bold d-inline-block text-center text-nowrap me-1" 
+		               style="font-size: 11px; border-radius: 10px; border: 1px solid #cbd5e1; height: 24px; line-height: 22px; padding: 0 10px; color: #1e293b; text-decoration: none;">더 보기</a>
+                        <button type="button" id="btn-tv-left" class="btn btn-sm btn-light border rounded-circle d-flex align-items-center justify-content-center" style="width: 26px; height: 26px; padding: 0;"><i class="bi bi-chevron-left" style="font-size: 12px;"></i></button>
+                        <button type="button" id="btn-tv-right" class="btn btn-sm btn-light border rounded-circle d-flex align-items-center justify-content-center" style="width: 26px; height: 26px; padding: 0;"><i class="bi bi-chevron-right" style="font-size: 12px;"></i></button>
+                    </div>
+                </div>
+                
+                <div class="recommended-scroll-container position-relative" id="tv-scroll-container" style="min-height: 230px;">
+                    <!-- JS 통신 전 공간을 확보해두는 임시 투명 카드 -->
+                    {% for i in "0123456789" %}
+                    <div class="recommended-item" style="visibility: hidden;">
+                        <div class="movie-card h-100"><a href="#" class="card-link flex-grow-1"><div class="poster-wrapper"></div></a></div>
+                    </div>
+                    {% endfor %}
+
+                    <!-- 💡 백엔드에서 추천 연산을 수행하는 동안 보여줄 세련된 투명 스켈레톤 로딩 바 -->
+                    <div id="ai-tv-loading-overlay" class="position-absolute" style="top: 0; bottom: 0; left: 0; right: 0; border-radius: 12px; z-index: 5; overflow: hidden; padding: 4px 2px 10px 2px; background: transparent;">
+                        <div class="d-flex gap-2.5 h-100 px-2 pt-2">
+                            {% for i in "123456" %}
+                            <div style="flex: 0 0 165px; max-width: 165px; display: flex; flex-direction: column; gap: 8px;">
+                                <div class="skeleton-ui" style="width: 100%; padding-top: 140%; border-radius: 12px;"></div>
+                                <div class="skeleton-ui" style="width: 80%; height: 16px; border-radius: 4px;"></div>
+                                <div class="skeleton-ui" style="width: 100%; height: 34px; border-radius: 6px; margin-top: auto;"></div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        <div class="position-absolute d-flex flex-column align-items-center justify-content-center w-100 h-100" style="top: 0; left: 0; background: linear-gradient(to bottom, rgba(248,250,252,0.6), rgba(248,250,252,1)); z-index: 10;">
+                            <div class="spinner-grow text-info mb-3" role="status" style="width: 2.5rem; height: 2.5rem; opacity: 0.8;"></div>
+                            <p class="m-0 text-dark fw-bold" style="font-size: 15px; letter-spacing: -0.5px;">AI가 취향을 정밀 분석 중입니다...</p>
+                            <p class="text-muted mt-1" style="font-size: 13px;">잠시만 기다려주세요 ✨</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<!-- ================= [SECTION 9: 하단 고정 푸터 (심플 텍스트)] ================= -->
+{% include 'partials/layout_footer.html' %}
+
+<!-- 부트스트랩 스크립트 번들 -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- 🚀 [공통 스크립트 장착] 검색창 및 필터 전송 자바스크립트 -->
+{% include 'partials/script_top_nav.html' %}
+
+<!-- 🚀 2. 공통 기능 (공유, 별점, 찜하기, 번역 등) 스크립트 -->
+{% include 'partials/script_common.html' %}
+
+<script>
+/* ================= [홈 화면 전용 로직] ================= */
+// 💡 페이지 초기 로딩 시 모든 비동기 통신 및 슬라이더 드래그 기능 할당
+document.addEventListener("DOMContentLoaded", function() {
+    // 1) 뱃지 숫자 K, M 단위 정리
+    document.querySelectorAll('.vote-count-badge').forEach(badge => badge.textContent = formatVoteCount(badge.getAttribute('data-votes')));
+    const heroVoteBadge = document.querySelector('.hero-vote-count'); if (heroVoteBadge) heroVoteBadge.textContent = formatVoteCount(heroVoteBadge.getAttribute('data-votes'));
+
+    // 2) 가로 스와이프 슬라이더 (마우스 드래그 & 화살표 클릭) 설정 공통 함수
+    function initRecSlider(sliderId, btnLeftId, btnRightId) {
+        const slider = document.getElementById(sliderId), btnLeft = document.getElementById(btnLeftId), btnRight = document.getElementById(btnRightId);
+        if (slider) {
+            let isDown = false, startX, scrollLeft;
+            slider.addEventListener('mousedown', (e) => { isDown = true; slider.style.cursor = 'grabbing'; startX = e.pageX - slider.offsetLeft; scrollLeft = slider.scrollLeft; });
+            slider.addEventListener('mouseleave', () => { isDown = false; slider.style.cursor = 'grab'; });
+            slider.addEventListener('mouseup', () => { isDown = false; slider.style.cursor = 'grab'; });
+            slider.addEventListener('mousemove', (e) => { if (!isDown) return; e.preventDefault(); const x = e.pageX - slider.offsetLeft; const walk = (x - startX) * 1.5; slider.scrollLeft = scrollLeft - walk; });
+            // 버튼 누르면 360px씩 부드럽게 이동
+            if (btnLeft && btnRight) { btnLeft.addEventListener('click', () => slider.scrollBy({ left: -360, behavior: 'smooth' })); btnRight.addEventListener('click', () => slider.scrollBy({ left: 360, behavior: 'smooth' })); }
+        }
+    }
+
+    // 3) AI 맞춤 영화 추천 (AJAX) 호출 및 렌더링
+    fetch("/api/recommendations/" + window.location.search)
+        .then(res => res.json())
+        .then(data => {
+            const aiContainer = document.getElementById("ai-recommendations"); if (!aiContainer) return;
+            aiContainer.innerHTML = data.html; // 스켈레톤을 밀어내고 진짜 카드 삽입!
+            
+            const moreBtn = aiContainer.querySelector('a[href*="more"]') || document.getElementById('btn-more-movie'); if (moreBtn) moreBtn.style.display = 'inline-flex';
+            aiContainer.querySelectorAll('.vote-count-badge').forEach(badge => badge.textContent = formatVoteCount(badge.getAttribute('data-votes')));
+            setTimeout(triggerLazyTranslationForVisibleMovies, 50);
+            
+            // 💡 [수정 완료] 영화 컨테이너 ID와 영화 화살표 버튼 ID 완벽 매칭!
+            initRecSlider('movie-scroll-container', 'btn-movie-left', 'btn-movie-right');
+        }).catch(err => console.error("AI 영화 추천 에러:", err));
+
+    // 4) AI 맞춤 TV 시리즈 추천 (AJAX) 호출 및 렌더링
+    fetch("/api/recommendations/tv/" + window.location.search)
+        .then(res => res.json())
+        .then(data => {
+            const tvContainer = document.getElementById("ai-tv-recommendations"); if (!tvContainer) return;
+            tvContainer.innerHTML = data.html; // 스켈레톤을 밀어내고 진짜 카드 삽입!
+            
+            const moreTvBtn = tvContainer.querySelector('a[href*="more"]') || document.getElementById('btn-more-tv'); if (moreTvBtn) moreTvBtn.style.display = 'inline-flex';
+            tvContainer.querySelectorAll('.vote-count-badge').forEach(badge => badge.textContent = formatVoteCount(badge.getAttribute('data-votes')));
+            setTimeout(triggerLazyTranslationForVisibleMovies, 50);
+            
+            // 💡 [수정 완료] TV 컨테이너 ID와 TV 화살표 버튼 ID 완벽 매칭!
+            initRecSlider('tv-scroll-container', 'btn-tv-left', 'btn-tv-right');
+        }).catch(err => console.error("AI TV 시리즈 추천 에러:", err));
+});
+
+</script>
+
+<!-- 💡 공통 로딩 오버레이 & 페이지 이동 딜레이 -->
+{% include 'partials/layout_loading_overlay.html' %}
+
+</body>
+</html>

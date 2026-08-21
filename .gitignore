@@ -1,0 +1,14 @@
+# 보안 파일
+.env
+
+# 파이썬 캐시 파일
+__pycache__/
+*.py[cod]
+
+# 임시 데이터베이스 (서버용 DB는 따로 만들 예정입니다)
+db.sqlite3
+
+# 너무 커서 안 올라가는 백업 데이터 파일들
+movies_backup.json
+title.basics.tsv.gz
+title.ratings.tsv.gz

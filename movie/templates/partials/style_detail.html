@@ -1,0 +1,99 @@
+<!-- ================= templates/partials/style_detail.html (상세페이지 공통 CSS) ================= -->
+<style>
+    /* ================= [전역 기본 레이아웃] ================= */
+    body { font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, sans-serif; background-color: #f8fafc; color: #0f172a; height: 100vh; height: 100dvh; overflow: hidden; display: flex; flex-direction: column; letter-spacing: -0.02em; transition: opacity 0.15s ease-in-out; }
+    body.page-transitioning { opacity: 0.5; pointer-events: none; }
+    .fixed-header { flex-shrink: 0; background: #ffffff; z-index: 1020; border-bottom: 1px solid #f1f5f9; padding-top: 0.5rem !important; padding-bottom: 6px !important; }
+    .scrollable-content { flex-grow: 1; overflow-y: scroll; -webkit-overflow-scrolling: touch; padding-top: 0.5rem !important; padding-bottom: 45px; }
+
+    /* ================= [상세 정보 카드 & 평점 박스] ================= */
+    .detail-card { background-color: #ffffff; border-radius: 14px; padding: 20px 24px; border: 1px solid #f1f5f9; box-shadow: 0 1px 3px rgba(0,0,0,0.02); margin-bottom: 14px; }
+    .rating-box { background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); color: #ffffff; border-radius: 14px; padding: 20px 24px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); margin-bottom: 14px; }
+    .text-sub { color: #64748b; }
+    .badge-custom { padding: 6px 12px; border-radius: 8px; font-size: 12px; font-weight: 600; display: inline-block; }
+    .cert-ALL { background-color: #10b981; color: white; }
+    .cert-12 { background-color: #eab308; color: black; }
+    .cert-15 { background-color: #f97316; color: white; }
+    .cert-19 { background-color: #ef4444; color: white; }
+    .cert-default { background-color: #64748b; color: white; }
+
+    /* ================= [이미지, 예고편, OTT 스타일] ================= */
+    .profile-card { background: #ffffff; border: 1px solid #f1f5f9; border-radius: 12px; overflow: hidden; transition: all 0.2s ease; text-align: center; height: 100%; }
+    .profile-card:hover { transform: translateY(-3px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05); border-color: #cbd5e1; }
+    .profile-img-wrap { width: 100%; padding-top: 120%; position: relative; background-color: #f1f5f9; }
+    .profile-img { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; }
+    .video-container { position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); background-color: #000; }
+    .video-container iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0; }
+    .ott-badge-item { display: flex; align-items: center; gap: 6px; background-color: #f8fafc; border: 1px solid #e2e8f0; padding: 4px 10px; border-radius: 8px; transition: all 0.2s ease; }
+    .ott-badge-item:hover { background-color: #f1f5f9; border-color: #cbd5e1; transform: translateY(-1px); }
+    .ott-logo-sm { width: 24px; height: 24px; border-radius: 5px; object-fit: cover; }
+
+    /* ================= [별점 평가 바 UI] ================= */
+    .star-rating-container { display: inline-flex; position: relative; font-size: 2.8rem; letter-spacing: 0; line-height: 1; user-select: none; white-space: nowrap; }
+    .star-rating-bg { color: #475569; display: flex; }
+    .star-rating-fill { color: #f59e0b; display: flex; position: absolute; top: 0; left: 0; overflow: hidden; pointer-events: none; width: 0%; transition: width 0.15s ease; }
+    .star-rating-inputs { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; }
+    .star-rating-inputs input[type="radio"] { appearance: none; -webkit-appearance: none; margin: 0; padding: 0; height: 100%; width: 10%; cursor: pointer; }
+
+    /* ================= [가로 스크롤 & 키워드 접기 UI] ================= */
+    .rec-btn-group { display: flex; gap: 6px; }
+    .rec-scroll-btn { width: 26px; height: 26px; border-radius: 50%; border: 1px solid #e2e8f0; background-color: rgba(255, 255, 255, 0.9); color: #475569; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; cursor: pointer; transition: all 0.2s ease; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+    .rec-scroll-btn:hover { background-color: #ffffff; border-color: #cbd5e1; color: #0f172a; transform: scale(1.05); }
+    .rec-scroll-btn:active { transform: scale(0.95); }
+    .recommended-scroll-container { display: flex; gap: 12px; overflow-x: auto; scroll-behavior: smooth; padding: 4px; margin: 0 -4px; cursor: grab; user-select: none; -webkit-overflow-scrolling: touch; -ms-overflow-style: none; scrollbar-width: none; }
+    .recommended-scroll-container::-webkit-scrollbar { display: none; }
+    .recommended-scroll-container:active { cursor: grabbing; }
+    .recommended-item { flex-shrink: 0; }
+    .keyword-wrapper { overflow: hidden; transition: max-height 0.3s ease; }
+    .keyword-wrapper.collapsed { max-height: 34px; }
+    .tag-badge { background-color: #f1f5f9; color: #475569; padding: 6px 12px; border-radius: 20px; font-size: 11.5px; font-weight: 500; display: inline-block; border: 1px solid #e2e8f0; }
+
+    /* ================= [감상평(리뷰) UI] ================= */
+    .review-textarea { background-color: #f8fafc; border: 1px solid #e2e8f0; color: #0f172a; border-radius: 12px; font-size: 14.5px; line-height: 1.6; min-height: 54px; max-height: 400px; transition: min-height 0.25s cubic-bezier(0.2, 0.8, 0.2, 1), border-color 0.2s, background-color 0.2s; resize: none; }
+    .review-textarea:focus { background-color: #ffffff; border-color: #64748b; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.03); color: #0f172a; min-height: 160px; outline: none; }
+    .review-save-btn { border-radius: 10px; font-size: 13.5px; font-weight: 600; transition: all 0.2s ease; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+    .review-text { font-size: 14px; line-height: 1.5; color: #333; white-space: pre-wrap; word-break: break-all; overflow-wrap: break-word; max-height: 3em; overflow-y: auto; overflow-x: hidden; padding-right: 6px; }
+    .review-text::-webkit-scrollbar { width: 4px; }
+    .review-text::-webkit-scrollbar-track { background: transparent; }
+    .review-text::-webkit-scrollbar-thumb { background: #e0e0e0; border-radius: 4px; }
+    .review-text::-webkit-scrollbar-thumb:hover { background: #c0c0c0; }
+    .review-btn { border: 1px solid #d1d5db !important; background-color: transparent !important; color: #6b7280 !important; padding: 6px 14px; border-radius: 8px; transition: all 0.3s ease; font-weight: 500; font-size: 12px; }
+    .review-btn:hover { background-color: #f3f4f6 !important; color: #374151 !important; border-color: #9ca3af !important; }
+    .review-btn.active { background-color: #4b5563 !important; color: #ffffff !important; border-color: #4b5563 !important; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
+
+    /* ================= [추천/유사작 포스터 카드 UI (🚀복구 완료!)] ================= */
+    .movie-card { border: 1px solid #f1f5f9; background: #ffffff; border-radius: 12px; overflow: hidden; transition: transform 0.3s cubic-bezier(0.215, 0.610, 0.355, 1), box-shadow 0.3s cubic-bezier(0.215, 0.610, 0.355, 1); box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02); display: flex; flex-direction: column; height: 100%; }
+    .movie-card:hover { transform: translateY(-4px); box-shadow: 0 12px 20px -5px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.02); border-color: #e2e8f0; }
+    .poster-wrapper { position: relative; width: 100%; padding-top: 80%; background-color: #f1f5f9; overflow: hidden; }
+    .poster-img { position: absolute; top: 50%; left: 50%; width: 100%; height: 100%; object-fit: cover; object-position: center 40%; transform: translate(-50%, -50%); transition: transform 0.5s ease; }
+    .movie-card:hover .poster-img { transform: translate(-50%, -50%) scale(1.03); }
+    .movie-info-wrap { padding: 4px 6px 4px; }
+    .movie-title { font-size: 14.5px; font-weight: 700; color: #0f172a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 0px; letter-spacing: -0.3px; line-height: 1.2; }
+    .movie-meta { font-size: 11px; color: #64748b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 0px; line-height: 1.1; }
+    
+    .rating-badge-container { display: inline-flex; align-items: center; gap: 4px; width: 100%; overflow: hidden; margin-top: 2px; }
+    .rating-badge { font-size: 10px; font-weight: 700; padding: 2px 5px; border-radius: 4px; white-space: nowrap; }
+    .bg-warning-subtle { background-color: rgba(245, 158, 11, 0.09) !important; color: #b45309 !important; }
+    .bg-primary-subtle { background-color: rgba(59, 130, 246, 0.09) !important; color: #1d4ed8 !important; }
+    .vote-count-badge { display: inline-block; font-size: 10px; font-weight: 600; color: #64748b; background-color: #f8fafc; padding: 2px 4px; border-radius: 4px; border: 1px solid #f1f5f9; }
+    .my-score-badge { margin-left: 0; }
+
+    /* ================= [포스터 확대 모달 & 기타 호버 효과] ================= */
+    .poster-modal { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background-color: rgba(0, 0, 0, 0.85); z-index: 9999; justify-content: center; align-items: center; cursor: zoom-out; backdrop-filter: blur(5px); opacity: 0; transition: opacity 0.2s ease; }
+    .poster-modal.show { display: flex; opacity: 1; }
+    .poster-modal img { max-width: 80vw; max-height: 80vh; object-fit: contain; border-radius: 16px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); transform: scale(0.95); transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1); }
+    .poster-modal.show img { transform: scale(1); }
+    .transition-hover { transition: all 0.2s ease; }
+    .shadow-sm-hover:hover { transform: translateY(-2px); box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06) !important; border-color: #cbd5e1 !important; }
+    .fixed-footer-flex { flex-shrink: 0; display: flex; justify-content: center; align-items: center; position: relative; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(8px); z-index: 1020; border-top: 1px solid #f1f5f9; padding: 0 1rem !important; height: 36px; }
+
+    /* ================= [모바일 반응형 보정] ================= */
+    @media (max-width: 576px) {
+        .mobile-logo-text { font-size: 1.1rem !important; letter-spacing: -1px !important; }
+        .mobile-search-input { width: 75px !important; font-size: 12px !important; }
+        .mobile-head-btn { padding-left: 6px !important; padding-right: 6px !important; font-size: 12px !important; }
+        .mobile-form-gap { gap: 4px !important; }
+        .detail-card { padding: 16px; margin-bottom: 12px; }
+        .rating-box { padding: 16px; margin-bottom: 12px; }
+    }
+</style>

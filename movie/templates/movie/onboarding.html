@@ -1,0 +1,373 @@
+<!-- ================= templates/movie/onboarding.html (가입 직후 기본 평가하는 온보딩 화면) ================= -->
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>취향 분석 온보딩</title>
+    <style>
+        /* 1. 기본 초기화 (잔여 스타일 방지) 및 사이트 공통 폰트 적용 */
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        /* 🚀 [디자인 개편] 전체 배경을 다른 페이지와 동일한 라이트 톤(#f8fafc)으로, 글씨를 어두운 색상(#0f172a)으로 변경! */
+        body { font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, sans-serif; background-color: #f8fafc; color: #0f172a; text-align: center; letter-spacing: -0.02em; }
+        
+        /* 💡 2. 헤더 (위아래 여백 1/2 감소 및 한 줄 배치용 설정) */
+        /* 🚀 [디자인 개편] 헤더 배경을 반투명한 흰색으로 변경하고 경계선을 부드러운 회색으로 교체 */
+        .header { 
+            position: sticky; top: 0; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(8px);
+            padding: 10px 20px; 
+            border-bottom: 1px solid #e2e8f0; z-index: 100; 
+            display: flex; flex-direction: column; align-items: center; 
+            box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+        }
+        .header-title-row { 
+            display: flex; align-items: baseline; gap: 10px; /* 두 줄을 한 줄로 합치기 */
+        }
+        .header h2 { margin: 0; font-size: 20px; font-weight: 800; color: #0f172a; }
+        .progress-text { font-size: 16px; font-weight: bold; color: #ff2f6e; margin: 0; }
+        
+        /* 💡 7. [신규] 온보딩 안내 멘트 및 버튼 스타일 추가 */
+        .onboarding-desc {
+            font-size: 13px;
+            color: #64748b; /* 라이트 테마에 맞춘 부드러운 회색 텍스트 */
+            margin: 8px 0;
+            line-height: 1.5;
+            word-break: keep-all; 
+        }
+        .onboarding-desc b {
+            color: #ff2f6e;
+            font-weight: 600;
+        }
+        /* 🚀 [신규 추가] 영화/시리즈 개수 설명용 보조 텍스트 스타일 */
+        .onboarding-sub-desc {
+            display: block;
+            margin-top: 4px;
+            font-size: 12px;
+            color: #475569;
+            font-weight: 500;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 4px;
+            justify-content: center;
+        }
+        
+        /* 🚀 [디자인 개편] 건너뛰기 & 초기화 버튼을 라이트 테마에 어울리는 깔끔한 테두리 버튼으로 변경 */
+        .skip-btn {
+            padding: 10px 20px;
+            font-size: 14px;
+            font-weight: 600;
+            background: #ffffff;
+            color: #475569;
+            border: 1px solid #cbd5e1;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+        }
+        .skip-btn:hover { background: #f1f5f9; color: #0f172a; border-color: #94a3b8; }
+        
+        #start-btn { 
+            padding: 10px 20px; font-size: 15px; font-weight: bold;
+            background: #ff2f6e; color: white; border: none; border-radius: 30px; 
+            cursor: pointer; transition: transform 0.2s ease; 
+            box-shadow: 0 4px 6px -1px rgba(255, 47, 110, 0.2);
+        }
+        #start-btn:hover { transform: scale(1.05); }
+
+        /* 🚀 [신규 추가] 영화/시리즈 영역을 구분하는 섹션 타이틀 스타일 */
+        .section-title {
+            font-size: 18px;
+            font-weight: 800;
+            color: #0f172a;
+            text-align: left;
+            max-width: 1000px;
+            margin: 24px auto 0; /* 위쪽 여백으로 확실한 구분 */
+            padding: 0 10px;
+        }
+
+        /* 💡 3. 확실한 Grid 설정 (타일간 세로 여백 1/2 감소) */
+        .movie-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 5px 10px; /* 세로 여백 5px로 타이트하게 유지 */
+            padding: 12px 10px;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        @media (min-width: 768px) {
+            .movie-grid { grid-template-columns: repeat(5, 1fr); gap: 10px 20px; padding: 24px 20px; }
+            .section-title { padding: 0 20px; font-size: 20px; margin-top: 30px; } /* 데스크탑에선 타이틀도 시원하게 */
+        }
+
+        /* 4. 카드 디자인 (크기 고정) */
+        /* 🚀 [디자인 개편] 카드를 흰색 배경과 부드러운 테두리로 변경하여 고급스러움 강조 */
+        .movie-card {
+            background: #ffffff;
+            padding: 8px;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 2px 4px -1px rgba(0,0,0,0.03);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .movie-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05);
+            border-color: #cbd5e1;
+        }
+
+        .movie-card img { 
+            width: 100%; 
+            aspect-ratio: 2 / 3; 
+            object-fit: cover; 
+            border-radius: 6px; 
+            margin-bottom: 4px; 
+        }
+
+        /* 💡 5. 상세 정보 스타일 (모든 공백 타이트하게 조이기) */
+        .info-box { 
+            padding: 2px 0 6px 0; 
+            text-align: left; 
+            flex-grow: 1; 
+        }
+        .m-title { 
+            font-size: 15.5px; 
+            font-weight: 700; 
+            color: #0f172a; /* 텍스트 진하게 */
+            margin-bottom: 2px; 
+            overflow: hidden; 
+            text-overflow: ellipsis; 
+            display: -webkit-box; 
+            -webkit-line-clamp: 2; 
+            -webkit-box-orient: vertical; 
+            line-height: 1.2;
+
+            /* 💡 핵심: 가짜 넓이를 늘려놓고 찌그러뜨리기 */
+            width: 111%; 
+            transform: scaleX(0.9); 
+            transform-origin: left; 
+            letter-spacing: -0.5px;
+            word-break: break-all;
+        }
+        .m-meta { 
+            font-size: 11px; 
+            color: #64748b; /* 밝은 테마에 맞춘 메타 텍스트 색상 */
+            margin-bottom: 0px; 
+            line-height: 1.25; 
+        }
+
+        /* 6. 평점 버튼 */
+        .rating-container { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; }
+        /* 🚀 [디자인 개편] 별점 버튼도 라이트 테마에 맞게 연한 회색 버튼으로 변경 */
+        .rate-btn { 
+            padding: 5px 0; 
+            background: #f1f5f9; 
+            color: #475569; 
+            border: 1px solid #e2e8f0; 
+            border-radius: 4px; 
+            cursor: pointer; 
+            font-size: 11px; 
+            font-weight: 600;
+            transition: all 0.15s ease;
+        }
+        .rate-btn:hover { background: #e2e8f0; color: #0f172a; }
+        .rate-btn.active { background: #ff2f6e; color: #fff; border-color: #ff2f6e; }
+        
+        /* 평가 완료된 카드 시각 효과 */
+        .rated-overlay { opacity: 0.45; filter: grayscale(30%); pointer-events: none; }
+        .rated-overlay .rating-container { pointer-events: auto; } /* 버튼은 다시 누를 수 있게 유지 */
+    </style>
+</head>
+
+<body>
+    {% csrf_token %}
+
+    <!-- 💡 1. 10개 이상이면 버튼이 처음부터 나타나도록 로직 추가 (건너뛰기도 포함) -->
+    <div class="header">
+        <div class="header-title-row">
+            <h2>취향 분석</h2>
+            <div class="progress-text">현재 <span id="count">{{ current_count|default:"0" }}</span> / 10개</div>
+            
+            <!-- 💡 새로 추가된 초기화 버튼 (안전하게 POST 방식으로 전송) -->
+            <form action="{% url 'reset_ratings' %}" method="POST" style="margin: 0;">
+                {% csrf_token %}
+                <button type="submit" style="background: #ffffff; color: #475569; border: 1px solid #cbd5e1; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; cursor: pointer; margin-left: 10px; transition: background 0.2s ease;">
+                    초기화 ↺
+                </button>
+            </form>
+        </div>
+        
+        <!-- 💡 [신규 추가] 페이지 이용 목적을 공손하고 깔끔하게 안내하는 멘트 -->
+        <p class="onboarding-desc">
+            회원님의 정교한 취향 분석을 위해 작품을 평가해 주세요.<br>
+            10개 이상 평가하시면 <b>맞춤형 AI 추천</b>을, 건너뛰시면 <b>기본 추천</b>을 제공해 드립니다.
+            <span class="onboarding-sub-desc">아래는 최근 인기 영화 50편과 시리즈 20편입니다.</span> <!-- 💡 요청하신 설명 추가 부분 (20편으로 수정!) -->
+        </p>
+
+        <!-- 💡 [신규 추가] 건너뛰기 버튼과 완료 버튼을 나란히 배치 (조건에 따라 숨김 처리) -->
+        <div class="action-buttons">
+            <!-- 💡 버튼을 누르면 밑에 있는 자바스크립트 함수를 실행합니다 -->
+            <button id="skip-btn" class="skip-btn" onclick="goToHomeWithLoading()"
+                    style="{% if current_count >= 10 %}display: none;{% else %}display: inline-block;{% endif %}">
+                건너뛰기 ⏭️
+            </button>
+            <button id="start-btn" onclick="goToHomeWithLoading()" 
+                    style="{% if current_count >= 10 %}display: inline-block;{% else %}display: none;{% endif %}">
+                추천 받으러 가기! 🚀
+            </button>
+        </div>
+    </div>
+
+    <!-- 🚀 [신규 추가] 영화 구역을 명확하게 알려주는 타이틀 -->
+    <h3 class="section-title">🎬 인기 영화 50선</h3>
+    <!-- 영화 목록 -->
+    <div class="movie-grid">
+        {% for movie in movies %}
+        
+        <!-- 💡 2. 이미 평가한 영화면 처음부터 'rated-overlay' 클래스를 달아 어둡게 만듭니다 -->
+        <div class="movie-card {% if movie.user_score > 0 %}rated-overlay{% endif %}" id="movie-{{ movie.id }}">
+            
+            <img src="{{ movie.tmdb_poster_url }}" alt="포스터" onerror="this.src='/static/images/no_poster.png'">
+            
+            <div class="info-box">
+                <div class="m-title">{{ movie.translated_title|default:movie.tmdb_title }}</div>
+                <div class="m-meta">{{ movie.display_year }} | {{ movie.tmdb_production_country_kr }}</div>
+                <!-- 🚀 라이트 테마에 맞게 별 색상을 경고색(#f59e0b)으로, 참여 텍스트를 연회색(#94a3b8)으로 변경 -->
+                <div class="m-meta" style="color: #f59e0b; font-weight: bold; margin-top: 1px;">
+                    <span style="color: #94a3b8; font-weight: normal; font-size: 10px;">IMDb </span>
+                    ★{{ movie.imdb_rating|default:"0.0" }} <span style="color: #94a3b8; font-weight: normal; font-size: 10px;">({{ movie.display_votes|default:"0" }} 참여)</span>
+                </div>
+                <!-- 💡 [핵심 교체] tmdb_genre에서 display_genre로 변경하여 한글로 나열되게 합니다! -->
+                <div class="m-meta" style="margin-top: 1px;">{{ movie.display_genre }}</div>
+            </div>
+            
+            <!-- 💡 평점 버튼 영역 -->
+            <div class="rating-container">
+                <!-- 💡 views.py에서 넘어온 1~10까지의 숫자를 그대로 씁니다 -->
+                {% for i in rating_range %}
+                <button class="rate-btn {% if movie.user_score == i %}active{% endif %}" 
+                        onclick="rateMovie('{{ movie.id }}', {{ i }}, this)" id="btn-{{ movie.id }}-{{ i }}">
+                    {{ i }}
+                </button>
+                {% endfor %}
+                <input type="hidden" id="url-{{ movie.id }}" value="{% url 'rate_movie' movie.id %}">
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- 🚀 [신규 추가] 시리즈 구역을 명확하게 알려주는 타이틀 -->
+    <h3 class="section-title" style="margin-top: 10px;">📺 인기 시리즈 20선</h3>
+    <!-- 시리즈 목록 -->
+    <!-- 💡 views.py에서 'series_list'로 넘어온 데이터를 영화와 동일한 UI로 뿌려줍니다 -->
+    <div class="movie-grid mb-5" style="padding-bottom: 50px;">
+        {% for movie in series_list %}
+        
+        <div class="movie-card {% if movie.user_score > 0 %}rated-overlay{% endif %}" id="movie-{{ movie.id }}">
+            
+            <img src="{{ movie.tmdb_poster_url }}" alt="포스터" onerror="this.src='/static/images/no_poster.png'">
+            
+            <div class="info-box">
+                <div class="m-title">{{ movie.translated_title|default:movie.tmdb_title }}</div>
+                <div class="m-meta">{{ movie.display_year }} | {{ movie.tmdb_production_country_kr }}</div>
+                <div class="m-meta" style="color: #f59e0b; font-weight: bold; margin-top: 1px;">
+                    <span style="color: #94a3b8; font-weight: normal; font-size: 10px;">IMDb </span>
+                    ★{{ movie.imdb_rating|default:"0.0" }} <span style="color: #94a3b8; font-weight: normal; font-size: 10px;">({{ movie.display_votes|default:"0" }} 참여)</span>
+                </div>
+                <!-- 💡 [핵심 교체] TV 시리즈 역시 display_genre로 통일합니다! -->
+                <div class="m-meta" style="margin-top: 1px;">{{ movie.display_genre }}</div>
+            </div>
+            
+            <div class="rating-container">
+                {% for i in rating_range %}
+                <button class="rate-btn {% if movie.user_score == i %}active{% endif %}" 
+                        onclick="rateMovie('{{ movie.id }}', {{ i }}, this)" id="btn-{{ movie.id }}-{{ i }}">
+                    {{ i }}
+                </button>
+                {% endfor %}
+                <!-- 💡 TV 시리즈도 rate_movie URL로 보내지만 views.py 안전망 덕에 자동으로 rate_tv로 분기됩니다. -->
+                <input type="hidden" id="url-{{ movie.id }}" value="{% url 'rate_movie' movie.id %}">
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+
+<script>
+    let currentCount = parseInt("{{ current_count|default:'0' }}");
+
+    function rateMovie(movieId, score, btnElement) {
+        const url = document.getElementById('url-' + movieId).value;
+        const formData = new FormData();
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        
+        // 💡 1. 이미 활성화된(빨간불 켜진) 버튼을 또 누른 경우인지 확인
+        let finalScore = score;
+        let isCancel = btnElement.classList.contains('active');
+        
+        if (isCancel) {
+            finalScore = 0; // 취소하는 경우 백엔드에 0점을 보내어 삭제를 요청합니다.
+        }
+
+        formData.append('score', finalScore);
+        formData.append('csrfmiddlewaretoken', csrfToken);
+
+        fetch(url, { method: 'POST', body: formData })
+        .then(response => response.json())
+        .then(data => {
+            if(data.status === 'success') {
+                const parent = btnElement.parentElement;
+                const movieCard = document.getElementById('movie-' + movieId);
+
+                if (isCancel) {
+                    // 💡 [평가 취소] 불을 끄고 카운트를 내립니다.
+                    btnElement.classList.remove('active');
+                    movieCard.classList.remove('rated-overlay');
+                    currentCount--;
+                } else {
+                    // 💡 [신규 평가 or 점수 수정] 불을 켭니다.
+                    parent.querySelectorAll('.rate-btn').forEach(btn => btn.classList.remove('active'));
+                    btnElement.classList.add('active');
+                    
+                    // 처음 평가하는 경우에만 카운트를 올리고 배경을 어둡게 합니다.
+                    if (!movieCard.classList.contains('rated-overlay')) {
+                        currentCount++;
+                        movieCard.classList.add('rated-overlay');
+                    }
+                }
+
+                // 카운트 숫자 업데이트
+                document.getElementById('count').innerText = currentCount;
+
+                // 💡 [핵심] 10개 이상이면 완료 버튼 표시 & 건너뛰기 숨김, 미만이면 반대로 동작!
+                if (currentCount >= 10) {
+                    document.getElementById('start-btn').style.display = 'inline-block';
+                    document.getElementById('skip-btn').style.display = 'none';
+                } else {
+                    document.getElementById('start-btn').style.display = 'none';
+                    document.getElementById('skip-btn').style.display = 'inline-block';
+                }
+            } else {
+                alert("서버에서 에러가 발생했습니다.");
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert("통신 실패! 개발자 도구 콘솔을 확인하세요.");
+        });
+    }
+</script>
+
+<!-- 💡 공통 로딩 오버레이 & 페이지 이동 딜레이 -->
+    {% include 'partials/loading_overlay.html' %}
+
+</body>
+</html>
+

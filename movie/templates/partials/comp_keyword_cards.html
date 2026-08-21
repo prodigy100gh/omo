@@ -1,0 +1,22 @@
+<!-- ================= templates/partials/comp_keyword_cards.html ================= -->
+<!-- 💡 더보기 버튼과 AI 타이틀을 완전히 배제한, 순수 키워드 카드 스크롤 영역 -->
+<div class="position-relative keyword-slider-wrapper">
+    <!-- 좌우 화살표 버튼 -->
+    <button class="btn btn-dark position-absolute top-50 start-0 translate-middle-y z-3 rounded-circle shadow slider-btn" id="btn-kw-left" style="width: 40px; height: 40px; display: none;">
+        <i class="bi bi-chevron-left"></i>
+    </button>
+    <button class="btn btn-dark position-absolute top-50 end-0 translate-middle-y z-3 rounded-circle shadow slider-btn" id="btn-kw-right" style="width: 40px; height: 40px;">
+        <i class="bi bi-chevron-right"></i>
+    </button>
+    
+    <!-- 스크롤 컨테이너 (여기에 공통 영화 카드가 반복해서 들어갑니다) -->
+    <div class="d-flex overflow-auto gap-3 py-2 custom-scrollbar scroll-container px-2" id="keyword-scroll-container" style="scroll-behavior: smooth;">
+        {% for movie in recommended_movies %}
+            <!-- 💡 모바일/PC 모두 예쁘게 보이도록 가로폭 고정 -->
+            <div class="flex-shrink-0" style="width: 140px;">
+                <!-- 🚀 사이트 전체 공통 카드 템플릿 완벽 재활용! -->
+                {% include 'partials/comp_movie_card.html' %}
+            </div>
+        {% endfor %}
+    </div>
+</div>

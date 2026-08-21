@@ -1,0 +1,69 @@
+<!-- ================= templates/partials/layout_top_nav.html (레이아웃 / 헤더) ================= -->
+
+<div class="d-flex flex-row align-items-center justify-content-start gap-2 pb-2 flex-nowrap" style="border-bottom: 1px solid transparent; width: 100%;">
+    
+    <!-- 💡 좌상단 홈버튼(로고) -->
+    <h4 class="fw-bold m-0 flex-shrink-0">
+        <a href="/" class="text-dark text-decoration-none mobile-logo-text" style="letter-spacing: -0.7px; font-size: 1.2rem;">🎬 OMO</a>
+    </h4>
+    
+    <div class="d-flex align-items-center flex-nowrap flex-grow-1 justify-content-end">
+        <form method="GET" action="{% url 'all_list' %}" class="d-flex align-items-center m-0 flex-nowrap mobile-form-gap w-100" style="gap: 4px;" id="search-form">
+            
+            <!-- ========================================== -->
+            <!-- 💡 [치명적 버그 수정] 검색 시 필터가 날아가지 않도록 보호하는 핵심 숨김 필드들! -->
+            <input type="hidden" name="type" id="hidden-type-val" value="{{ current_type|default:'movie' }}">
+            <input type="hidden" name="sort" value="{{ sort_by|default:'votes_desc' }}">
+            <input type="hidden" name="filter_submitted" value="true">
+            
+            <!-- 💡 8대 제외 필터 (최초 접속 시 디폴트로 모두 켜지게 보호) -->
+            <input type="hidden" name="exclude_rated" id="hidden-exclude-rated" value="{% if filter_submitted != 'true' or exclude_rated %}on{% endif %}">
+            <input type="hidden" name="exclude_no_imdb" id="hidden-exclude-no-imdb" value="{% if filter_submitted != 'true' or exclude_no_imdb %}on{% endif %}">
+            <input type="hidden" name="exclude_no_rating" id="hidden-exclude-no-rating" value="{% if filter_submitted != 'true' or exclude_no_rating %}on{% endif %}">
+            <input type="hidden" name="exclude_low_rating" id="hidden-exclude-low-rating" value="{% if filter_submitted != 'true' or exclude_low_rating %}on{% endif %}">
+            <input type="hidden" name="exclude_low_votes" id="hidden-exclude-low-votes" value="{% if filter_submitted != 'true' or exclude_low_votes %}on{% endif %}">
+            <input type="hidden" name="exclude_doc" id="hidden-exclude-doc" value="{% if filter_submitted != 'true' or exclude_doc %}on{% endif %}">
+            <input type="hidden" name="exclude_short" id="hidden-exclude-short" value="{% if filter_submitted != 'true' or exclude_short %}on{% endif %}">
+            <input type="hidden" name="exclude_unreleased" id="hidden-exclude-unreleased" value="{% if filter_submitted != 'true' or exclude_unreleased %}on{% endif %}">
+            
+            <!-- 💡 선택된 장르/OTT/연령/국가 필터를 묶어서 유지 -->
+            <div id="hidden-genres-container">
+                {% for g in selected_genres %}<input type="hidden" name="genres" value="{{ g }}">{% endfor %}
+                {% for o in selected_otts %}<input type="hidden" name="otts" value="{{ o }}">{% endfor %}
+                {% for r in selected_ratings %}<input type="hidden" name="ratings" value="{{ r }}">{% endfor %}
+                {% for c in selected_countries %}<input type="hidden" name="countries" value="{{ c }}">{% endfor %}
+            </div>
+            <!-- ========================================== -->
+
+            <!-- 💡 실시간 검색창 및 자동 완성 팝업 -->
+            <!-- 🚀 [핵심 수정] 드롭다운이 검색창 좌측에 딱 맞춰 열리도록 껍데기(wrapper) 구조 개선 -->
+            <div class="d-flex justify-content-end" style="flex-grow: 1; min-width: 50px;">
+                <div class="position-relative" style="width: 100%; max-width: 120px;">
+                    <input type="text" name="search" id="live-search-input" class="form-control form-control-sm bg-light border-0 px-2 mobile-search-input w-100" style="border-radius: 8px; padding-top: 0.45rem; padding-bottom: 0.45rem; font-size: 13px;" placeholder="검색..." value="{{ search_query|default:'' }}" autocomplete="off">
+                    
+                    <!-- 💡 end-0을 start-0으로 변경하여 좌측 기준 우측으로 열리게 설정 -->
+                    <div id="live-search-dropdown" class="shadow rounded-3 border bg-white position-absolute start-0 mt-1 d-none" style="top: 100%; z-index: 1050; max-height: 350px; overflow-y: auto; min-width: 280px; max-width: 95vw;"></div>
+                </div>
+            </div>
+            
+            <button type="submit" class="btn btn-sm btn-dark text-nowrap d-inline-flex align-items-center justify-content-center mobile-head-btn flex-shrink-0" style="border-radius: 8px; font-size: 13px; border: none; height: 31px; padding: 0 10px 2px 10px;">검색</button>
+
+            <!-- 💡 지능형 초기화 버튼 (디테일 페이지에서는 안 튀어나오고, 클릭 시 현재 탭 유지) -->
+            {% if search_query or selected_genres or selected_otts or selected_ratings or selected_countries or filter_submitted == 'true' or sort_by and sort_by != 'votes_desc' %}
+                <a href="{% if request.resolver_match.url_name == 'all_list' %}?type={{ current_type|default:'movie' }}{% else %}/{% endif %}" class="btn btn-sm btn-outline-danger text-nowrap d-inline-flex align-items-center justify-content-center mobile-head-btn flex-shrink-0" style="border-radius: 8px; font-size: 13px; height: 31px; padding: 0 10px 2px 10px; border: none; box-shadow: inset 0 0 0 1px #dc3545;">초기화</a>
+            {% endif %}
+
+            <!-- 💡 지능형 전체DB 버튼 (전체목록 페이지면 색상 반전) -->
+            <a href="{% url 'all_list' %}" class="btn btn-sm text-nowrap fw-bold d-inline-flex align-items-center justify-content-center flex-shrink-0 mobile-head-btn {% if request.resolver_match.url_name == 'all_list' %}btn-outline-dark{% else %}btn-dark{% endif %}" style="border-radius: 8px; font-size: 13px; height: 31px; padding: 0 10px 2px 10px; border: none; {% if request.resolver_match.url_name == 'all_list' %}box-shadow: inset 0 0 0 1px #212529;{% endif %}">전체DB</a>
+
+            {% if user.is_authenticated %}
+                <!-- 💡 지능형 나의 공간 버튼 (마이페이지면 색상 반전) -->
+                <a href="{% url 'my_page' %}" class="btn btn-sm text-nowrap fw-bold d-inline-flex align-items-center justify-content-center flex-shrink-0 mobile-head-btn {% if request.resolver_match.url_name == 'my_page' %}btn-outline-dark{% else %}btn-dark{% endif %}" style="border-radius: 8px; font-size: 13px; height: 31px; padding: 0 10px 2px 10px; border: none; {% if request.resolver_match.url_name == 'my_page' %}box-shadow: inset 0 0 0 1px #212529;{% endif %}">나의 공간</a>
+                
+                <a href="{% url 'logout' %}?next={{ request.get_full_path|urlencode }}" class="btn btn-sm btn-dark text-nowrap fw-bold d-inline-flex align-items-center justify-content-center flex-shrink-0 mobile-head-btn" style="border-radius: 8px; font-size: 13px; border: none; height: 31px; padding: 0 8px 2px 8px;">로그아웃</a>
+            {% else %}
+                <a href="{% url 'login' %}?next={{ request.get_full_path|urlencode }}" class="btn btn-sm text-nowrap fw-bold d-inline-flex align-items-center justify-content-center flex-shrink-0 mobile-head-btn" style="border-radius: 8px; font-size: 13px; background-color: #ff2f6e; color: white; border: none; height: 31px; padding: 0 12px 2px 12px;">로그인</a>
+            {% endif %}
+        </form>
+    </div>
+</div>

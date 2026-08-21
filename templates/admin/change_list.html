@@ -1,0 +1,90 @@
+{% extends "admin/change_list.html" %}
+
+{% block extrahead %}
+{{ block.super }}
+<style>
+    /* 버튼 디자인 */
+    #hide-filter-btn {
+        display: block; width: 100%; padding: 8px; background: #f8f9fa;
+        color: #444; border: 1px solid #ddd; border-radius: 4px;
+        cursor: pointer; font-weight: bold; font-size: 13px; margin-bottom: 15px;
+        text-align: center;
+    }
+    #hide-filter-btn:hover { background: #e2e6ea; }
+    
+    #show-filter-btn {
+        float: right; padding: 8px 15px; background: #417690; color: white;
+        border: none; border-radius: 4px; cursor: pointer; font-weight: bold; margin-bottom: 15px; display: none;
+    }
+
+    /* 🚀 핵심: 장고의 CSS Grid 칸 자체를 부수고 단일 블록으로 전환 */
+    #changelist.hide-sidebar {
+        display: block !important;
+    }
+    #changelist.hide-sidebar #changelist-filter {
+        display: none !important;
+    }
+    #changelist.hide-sidebar #changelist-form {
+        width: 100% !important;
+        max-width: 100% !important;
+        margin-right: 0 !important;
+    }
+    #changelist.hide-sidebar .results {
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+    #changelist.hide-sidebar table#result_list {
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+</style>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const filterBox = document.getElementById('changelist-filter');
+        const changelist = document.getElementById('changelist');
+        
+        if (filterBox && changelist) {
+            // 1. 버튼 생성
+            const showBtn = document.createElement('button');
+            showBtn.id = 'show-filter-btn';
+            showBtn.innerHTML = '⚙️ 필터 열기';
+            changelist.parentNode.insertBefore(showBtn, changelist);
+            
+            const hideBtn = document.createElement('button');
+            hideBtn.id = 'hide-filter-btn';
+            hideBtn.innerHTML = '✖ 필터 접기';
+            filterBox.insertBefore(hideBtn, filterBox.firstChild);
+
+            // 2. 상태 적용 함수
+            function applyState(hidden) {
+                if (hidden) {
+                    changelist.classList.add('hide-sidebar');
+                    changelist.classList.remove('filtered');
+                    showBtn.style.display = 'block';
+                } else {
+                    changelist.classList.remove('hide-sidebar');
+                    changelist.classList.add('filtered');
+                    showBtn.style.display = 'none';
+                }
+            }
+
+            // 3. 로컬스토리지 연동
+            const isHidden = localStorage.getItem('hide_django_admin_filter') === 'true';
+            applyState(isHidden);
+
+            hideBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                localStorage.setItem('hide_django_admin_filter', 'true');
+                applyState(true);
+            });
+
+            showBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                localStorage.setItem('hide_django_admin_filter', 'false');
+                applyState(false);
+            });
+        }
+    });
+</script>
+{% endblock %}

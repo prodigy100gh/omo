@@ -1,0 +1,252 @@
+<!-- ================= templates/movie/signup.html (회원가입 화면) ================= -->
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OMO 오늘 모 볼까?! - 회원가입</title>
+    <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+    <style>
+        * { box-sizing: border-box; }
+        body { 
+            font-family: 'Pretendard', sans-serif; 
+            background-color: #f8f9fc; 
+            color: #333333;
+            display: flex; 
+            justify-content: center; /* 가로 정중앙 */
+            
+            /* 💡 1. 세로 정중앙 정렬! 아래로 쏠린 여백을 위아래 반반 예쁘게 나눕니다 */
+            align-items: center; 
+            
+            /* 💡 2. vh 대신 dvh를 쓰면 모바일 브라우저 주소창 땜에 생기는 억울한 스크롤도 완벽 차단됩니다 */
+            min-height: 100dvh; 
+            margin: 0;
+            padding: 20px; /* 모바일에서 양옆이 화면 끝에 닿지 않도록 방어 */
+        }
+
+        .auth-container { 
+            width: 100%;
+            max-width: 480px; 
+            padding: 30px; 
+            background-color: #ffffff; 
+            
+            /* 💡 3. 위아래로 억지로 주던 margin 여백 코드는 싹 지워버립니다! (body가 알아서 중앙으로 잡아줌) */
+            
+            border: 1px solid #eaeaea;
+            border-radius: 16px; 
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.04); 
+        }
+
+        .auth-container h2 { 
+            text-align: center; 
+            margin-top: 0;
+            margin-bottom: 30px;
+            font-weight: 700;
+            font-size: 26px;
+            color: #111111; 
+        }
+        
+        /* 💡 as_p 대신 field-group 클래스로 개별 제어 */
+        .field-group { 
+            display: flex; 
+            flex-direction: column; 
+            margin-bottom: 24px; 
+            position: relative; 
+        }
+        .auth-container label { 
+            font-size: 14px; 
+            color: #555555; 
+            margin-bottom: 8px; 
+            font-weight: 600;
+        }
+        .auth-container input { 
+            padding: 14px 15px; 
+            background-color: #ffffff; 
+            border: 1px solid #dcdcdc; 
+            border-radius: 8px; 
+            color: #111;
+            font-size: 15px;
+            transition: all 0.2s ease; 
+        }
+        .auth-container input:focus { 
+            outline: none; 
+            border-color: #111111; 
+            box-shadow: 0 0 0 3px rgba(17, 17, 17, 0.08); 
+        }
+        
+        /* 💡 설명글 깔끔하게 정리 */
+        .helptext { 
+            font-size: 12.5px; 
+            color: #777777; 
+            margin-top: 8px; 
+            line-height: 1.4;
+            word-break: keep-all; 
+        }
+        
+        /* 💡 장고 기본 비밀번호 안내(ul)의 왼쪽 여백 제거 */
+        .helptext ul {
+            padding-left: 0;
+            margin: 0;
+            list-style-type: none; /* 기본 까만 점 지우기 */
+        }
+        .helptext ul li {
+            margin-bottom: 4px;
+        }
+        /* 까만 점 대신 예쁜 대시(-) 기호 추가 */
+        .helptext ul li::before {
+            content: "- ";
+            color: #aaa;
+        }
+
+        .random-btn {
+            position: absolute;
+            right: 8px;
+            top: 36px;
+            padding: 6px 10px;
+            font-size: 12px;
+            font-weight: 600;
+            background-color: #f1f3f5; 
+            color: #333;
+            border: 1px solid #dcdcdc;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .random-btn:hover { background-color: #e9ecef; }
+
+        .btn { 
+            width: 100%; 
+            padding: 16px; 
+            background-color: #111111; 
+            color: white; 
+            border: none; 
+            border-radius: 8px; 
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer; 
+            margin-top: 10px;
+            transition: background-color 0.2s, transform 0.1s;
+        }
+        .btn:hover { background-color: #333333; }
+        .btn:active { transform: scale(0.98); }
+
+        .errorlist {
+            color: #e03131;
+            font-size: 13px;
+            font-weight: bold;
+            list-style-type: none;
+            padding: 12px;
+            margin: 0 0 10px 0;
+            background-color: #fff5f5;
+            border-left: 4px solid #e03131;
+            border-radius: 4px;
+        }
+        .login-link { text-align: center; font-size: 14px; color: #777; margin-top: 25px; }
+        .login-link a { color: #111; text-decoration: none; font-weight: bold; transition: color 0.2s; }
+        .login-link a:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+    <div class="auth-container">
+        <h2>OMO - 오늘 모 볼까?!<br>회원 가입 </h2>
+        <form method="POST">
+            {% csrf_token %}
+            
+            {% if form.non_field_errors %}
+                <div class="errorlist">{{ form.non_field_errors }}</div>
+            {% endif %}
+
+            <!-- 1. 이메일 -->
+            <div class="field-group">
+                <label for="{{ form.email.id_for_label }}">{{ form.email.label }}</label>
+                {{ form.email }}
+                {% if form.email.errors %}<div class="errorlist">{{ form.email.errors }}</div>{% endif %}
+            </div>
+
+            <!-- 2. 닉네임 -->
+            <div class="field-group">
+                <label for="{{ form.username.id_for_label }}">{{ form.username.label }}</label>
+                {{ form.username }}
+                {% if form.username.errors %}<div class="errorlist">{{ form.username.errors }}</div>{% endif %}
+                {% if form.username.help_text %}<div class="helptext">{{ form.username.help_text|safe }}</div>{% endif %}
+            </div>
+
+            <!-- 3. 비밀번호 -->
+            <div class="field-group" style="margin-bottom: 16px;">
+                <label for="{{ form.password1.id_for_label }}">{{ form.password1.label }}</label>
+                {{ form.password1 }}
+                {% if form.password1.errors %}<div class="errorlist">{{ form.password1.errors }}</div>{% endif %}
+                <div class="helptext" style="color: #4aabff; margin-top: 8px;">
+                    - 8자 이상 필수, 특수문자(!@#$%^&*) 사용 가능합니다.<br>
+                    - 다른 개인 정보와 유사한 비밀번호는 사용할 수 없습니다.<br>
+                    - 통상적으로 자주 사용되는 비밀번호는 사용할 수 없습니다.<br>
+                    - 숫자로만 이루어진 비밀번호는 사용할 수 없습니다.
+                </div>
+            </div>
+
+            <!-- 4. 비밀번호 확인 -->
+            <div class="field-group">
+                <label for="{{ form.password2.id_for_label }}">{{ form.password2.label }}</label>
+                {{ form.password2 }}
+                {% if form.password2.errors %}<div class="errorlist">{{ form.password2.errors }}</div>{% endif %}
+            </div>
+
+            <button type="submit" class="btn">가입하기</button>
+        </form>
+        <div class="login-link">
+            이미 계정이 있으신가요? <a href="{% url 'login' %}">로그인</a>
+        </div>
+    </div>
+
+    <!-- 랜덤 닉네임 스크립트 -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const usernameInput = document.getElementById('id_username');
+            
+            if (usernameInput) {
+                usernameInput.style.paddingRight = '95px';
+
+                const adjectives = [
+                    '행복한', '즐거운', '고독한', '낭만적인', '까칠한', '용감한', '유쾌한', '조용한', '신나는', '졸린', 
+                    '멋진', '똑똑한', '귀여운', '시크한', '차분한', '활기찬', '다정한', '엉뚱한', '빛나는', '진지한'
+                ];
+                const nouns = [
+                    '팝콘', '콜라', '영화광', '관람객', '감독', '배우', '슬레이트', '티켓', '영사기', '평론가', 
+                    '시나리오', '필름', '카메라', '매니아', '주인공', '조연', '스크린', '무비', '박스오피스', '엔딩'
+                ];
+                
+                function getRandomName() {
+                    const adj = adjectives[Math.floor(Math.random() * adjectives.length)];
+                    const noun = nouns[Math.floor(Math.random() * nouns.length)];
+                    // 💡 5자리 숫자 생성 (10000 ~ 99999)
+                    const num = Math.floor(Math.random() * 90000) + 10000;
+                    
+                    const result = adj + noun + num;
+                    // 15자 제한 체크 (만약 넘으면 다시 생성)
+                    return result.length <= 15 ? result : getRandomName(); 
+                }
+
+                if (!usernameInput.value) {
+                    usernameInput.value = getRandomName();
+                }
+
+                const randomBtn = document.createElement('button');
+                randomBtn.type = 'button';
+                randomBtn.className = 'random-btn';
+                randomBtn.innerHTML = '🎲 랜덤 뽑기';
+                
+                randomBtn.onclick = function() {
+                    usernameInput.value = getRandomName();
+                };
+
+                usernameInput.parentNode.insertBefore(randomBtn, usernameInput.nextSibling);
+            }
+        });
+    </script>
+
+<!-- 💡 공통 로딩 오버레이 & 페이지 이동 딜레이 -->
+    {% include 'partials/loading_overlay.html' %}
+
+</body>
+</html>

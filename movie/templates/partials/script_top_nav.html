@@ -1,0 +1,125 @@
+<!-- ================= templates/partials/script_top_nav.html (스크립트 / 헤더) ================= -->
+
+<script>
+// =====================================================================
+// 💡 1. 실시간 자동 완성 검색어 드롭다운 (한글 끊김 버그 픽스 완료 🚀)
+// =====================================================================
+const searchInput = document.getElementById('live-search-input');
+const searchDropdown = document.getElementById('live-search-dropdown');
+let searchTimeout = null;
+let fetchController = null; 
+
+if (searchInput && searchDropdown) {
+    searchInput.addEventListener('input', function (e) {
+        clearTimeout(searchTimeout);
+        const query = e.target.value.trim();
+        
+        if (query.length < 1) {
+            searchDropdown.classList.add('d-none');
+            if (fetchController) fetchController.abort(); 
+            return;
+        }
+        
+        // 🚀 [핵심 수정 1] 타자를 칠 때마다 즉시 화면을 부수지 않도록,
+        // 로딩 바를 띄우는 코드를 setTimeout '안쪽'으로 이동시켰습니다.
+        searchTimeout = setTimeout(() => {
+            // 타자가 멈췄을 때 비로소 로딩 바를 띄웁니다.
+            searchDropdown.innerHTML = '<div class="p-3 text-center text-muted small fw-semibold"><div class="spinner-border spinner-border-sm text-secondary me-2" role="status"></div>검색 중...</div>';
+            searchDropdown.classList.remove('d-none');
+
+            if (fetchController) fetchController.abort();
+            fetchController = new AbortController();
+
+            fetch(`/all-list/?live_search=true&search=${encodeURIComponent(query)}`, { signal: fetchController.signal })
+            .then(res => res.json())
+            .then(data => {
+                searchDropdown.innerHTML = '';
+                
+                // 🚀 백엔드에서 글자 수에 맞춰 잘라서 주므로 바로 사용!
+                const results = data.results; 
+                const totalCount = (data.movie_count || 0) + (data.tv_count || 0) + (data.people_count || 0);
+                
+                if (totalCount === 0) {
+                    searchDropdown.innerHTML = '<div class="p-3 text-center text-muted small fw-semibold">검색 결과가 없습니다.</div>';
+                } else {
+                    results.forEach(item => {
+                        const href = item.type === 'movie' ? `/movie/${item.id}/` : (item.type === 'tv' ? `/tv/${item.id}/` : `/person/${item.id}/`);
+                        const imgHtml = item.img ? `<img src="${item.img}" style="width: 100%; height: 100%; object-fit: cover;">` : `<div class="w-100 h-100 d-flex align-items-center justify-content-center text-muted" style="font-size: 10px;">이미지</div>`;
+                        
+                        // 🚀 [디자인] 인물일 경우 사진을 완벽하게 동그랗게!
+                        const isPerson = item.type === 'person';
+                        const borderRadius = isPerson ? '50%' : '4px';
+                        // 🚀 [디자인] 세로 높이를 38px로 압축
+                        const imgContainerStyle = `width: 32px; height: ${isPerson ? '32px' : '38px'}; flex-shrink: 0; background-color: #f1f5f9; border-radius: ${borderRadius}; overflow: hidden; border: 1px solid #e2e8f0;`;
+                        
+                        const aTag = document.createElement('a');
+                        aTag.href = href;
+                        // 🚀 [디자인] 패딩을 줄여서 세로로 촘촘하게! (py-1 px-2)
+                        aTag.className = 'd-flex align-items-center gap-2 py-1 px-2 border-bottom text-decoration-none';
+                        aTag.style.backgroundColor = '#fff';
+                        aTag.style.transition = 'background-color 0.2s ease';
+                        aTag.onmouseover = () => (aTag.style.backgroundColor = '#f8fafc');
+                        aTag.onmouseout = () => (aTag.style.backgroundColor = '#fff');
+                        aTag.innerHTML = `
+                            <div style="${imgContainerStyle}">
+                                ${imgHtml}
+                            </div>
+                            <div class="flex-grow-1 min-w-0 text-start">
+                                <div class="text-dark fw-bold text-truncate" style="font-size: 13px; line-height: 1.2;">
+                                    <span class="badge" style="background-color: ${item.color}; font-size: 9.5px; padding: 2px 4px; vertical-align: middle; margin-right: 3px;">${item.type_label}</span>
+                                    ${item.title}
+                                </div>
+                                ${item.year ? `<div class="text-muted text-truncate mt-1" style="font-size: 11px; line-height: 1;">${item.year}</div>` : ''}
+                            </div>`;
+                        searchDropdown.appendChild(aTag);
+                    });
+                    
+                    if (totalCount > 0) {
+                        const majorType = (data.movie_count >= data.tv_count) ? 'movie' : 'tv';
+                        const moreItem = document.createElement('a');
+                        moreItem.href = `/all-list/?type=${majorType}&search=${encodeURIComponent(query)}`;
+                        moreItem.className = 'd-block text-center py-2 text-primary text-decoration-none fw-bold small';
+                        moreItem.style.backgroundColor = '#f8fafc';
+                        moreItem.textContent = `영화 ${data.movie_count}편, 시리즈 ${data.tv_count}편 전체 보기 →`;
+                        searchDropdown.appendChild(moreItem);
+                    }
+                }
+                searchDropdown.classList.remove('d-none');
+            })
+            .catch((err) => {
+                if (err.name !== 'AbortError') console.error("실시간 검색 에러:", err);
+            });
+        }, 400); // 🚀 [핵심 수정 2] 한글 타자 속도를 고려해 대기 시간을 300ms -> 400ms로 아주 살짝 늘려주었습니다.
+    });
+
+    document.addEventListener('click', function (e) {
+        if (!searchInput.contains(e.target) && !searchDropdown.contains(e.target)) {
+            searchDropdown.classList.add('d-none');
+        }
+    });
+}
+
+// =====================================================================
+// 💡 2. 검색 폼 전송 이벤트 가로채기 (숨김 필터 보존)
+// =====================================================================
+const searchForm = document.getElementById('search-form');
+if (searchForm) {
+    searchForm.addEventListener('submit', function(e) {
+        const hiddenContainer = document.getElementById('hidden-genres-container');
+        if (!hiddenContainer) return;
+        hiddenContainer.innerHTML = '';
+        const selectors = ['genres', 'otts', 'ratings', 'countries'];
+        selectors.forEach(name => {
+            document.querySelectorAll(`#filter-form input[name="${name}"]:checked`).forEach(cb => {
+                const input = document.createElement('input'); input.type = 'hidden'; input.name = name; input.value = cb.value; hiddenContainer.appendChild(input);
+            });
+        });
+        const exIds = ['exclude_doc', 'exclude_no_rating', 'exclude_low_votes', 'exclude_short', 'exclude_low_rating', 'exclude_rated', 'exclude_unreleased', 'exclude_no_imdb'];
+        exIds.forEach(id => {
+            const h = document.getElementById(`hidden-${id.replace(/_/g, '-')}`);
+            const cb = document.getElementById(`${id.split('_').map((w,i)=>i===0?w:w.charAt(0).toUpperCase()+w.slice(1)).join('')}Check`);
+            if (h && cb) h.value = cb.checked ? 'on' : '';
+        });
+    });
+}
+</script>

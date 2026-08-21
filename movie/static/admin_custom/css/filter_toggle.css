@@ -1,0 +1,50 @@
+/* 부드럽게 열리고 닫히도록 애니메이션 효과 추가 */
+#changelist-filter {
+    transition: flex-basis 0.2s ease, width 0.2s ease;
+}
+
+/* 필터가 접혔을 때의 스타일 */
+#changelist-filter.collapsed {
+    /* 💡 핵심: 최신 장고의 Flexbox 공간 예약(280px)을 강제로 60px로 줄여버립니다 */
+    flex: 0 0 60px !important; 
+    width: 60px !important;
+    min-width: 60px;
+    overflow: hidden; /* 내부 글자가 삐져나오지 않게 숨김 */
+}
+
+/* 접혔을 때 하위 메뉴들 모두 숨김 */
+#changelist-filter.collapsed h3,
+#changelist-filter.collapsed ul,
+#changelist-filter.collapsed form {
+    display: none !important;
+}
+
+/* 마우스 올렸을 때 클릭 가능하다는 표시 */
+#changelist-filter h2 {
+    cursor: pointer;
+    user-select: none; /* 더블클릭 시 텍스트에 파란 블록 씌워지는 것 방지 */
+}
+
+/* 열려있을 때의 화살표 */
+#changelist-filter h2::after {
+    content: ' ▼';
+    float: right;
+    font-size: 12px;
+}
+
+/* 접혔을 때 제목 영역 디자인 다듬기 */
+#changelist-filter.collapsed h2 {
+    font-size: 11px;
+    text-align: center;
+    padding: 8px 5px;
+    white-space: nowrap;
+}
+
+/* 접혔을 때의 화살표 */
+#changelist-filter.collapsed h2::after {
+    content: '◀';
+    float: none;
+    display: block;
+    margin-top: 8px;
+    font-size: 14px;
+}

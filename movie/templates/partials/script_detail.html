@@ -1,0 +1,551 @@
+<!-- ================= templates/partials/script_detail.html (스크립트 / 상세페이지) ================= -->
+
+<script>
+    // =====================================================================
+    // 💡 [지능형 템플릿 변수] is_tv 명찰을 통해 완벽하게 영화/시리즈를 판별합니다!
+    // =====================================================================
+    const ITEM_TYPE = "{% if is_tv %}tv{% else %}movie{% endif %}";
+    const ITEM_ID = "{% if is_tv %}{{ series.id }}{% else %}{{ movie.id }}{% endif %}";
+    const FALLBACK_POSTER = "{% if is_tv %}{{ series.tmdb_poster_url|default:'' }}{% else %}{{ movie.tmdb_poster_url|default:'' }}{% endif %}";
+    const RAW_KEYWORDS = "{% if is_tv %}{{ series.tmdb_keywords|escapejs }}{% else %}{{ movie.tmdb_keywords|escapejs }}{% endif %}";
+    const CUSTOM_TRAILER = "{% if is_tv %}{{ series.youtube_trailer_url|default:'' }}{% else %}{{ movie.youtube_trailer_url|default:'' }}{% endif %}";
+    const TMDB_TRAILER = "{% if is_tv %}{{ series.tmdb_trailer_url|default:'' }}{% else %}{{ movie.tmdb_trailer_url|default:'' }}{% endif %}";
+    const HAS_TRANSLATED_TITLE = "{% if is_tv %}{{ series.translated_title|default:'' }}{% else %}{{ movie.translated_title|default:'' }}{% endif %}";
+    const MY_SCORE = parseInt("{{ my_score|default:0 }}");
+
+    // 💡 [포스터 확대 모달 기능]
+    function openPosterModal(imageSrc) {
+        const modal = document.getElementById('posterModal'), modalImg = document.getElementById('modalImage');
+        if(modal) {
+            if (imageSrc) { const highResSrc = imageSrc.replace('/w185/', '/w500/'); modalImg.src = highResSrc; } 
+            else { modalImg.src = FALLBACK_POSTER; }
+            modal.style.display = 'flex'; setTimeout(() => modal.classList.add('show'), 10);
+        }
+    }
+    function closePosterModal() {
+        const modal = document.getElementById('posterModal');
+        if(modal) { modal.classList.remove('show'); setTimeout(() => modal.style.display = 'none', 200); }
+    }
+
+    // 🚀 [가로 스크롤 통제 함수]
+    function initRecSlider(sliderId, btnLeftId, btnRightId, scrollAmount = 300) {
+        const slider = document.getElementById(sliderId), btnLeft = document.getElementById(btnLeftId), btnRight = document.getElementById(btnRightId);
+        if (slider) {
+            let isDown = false, startX, scrollLeft;
+            slider.addEventListener('mousedown', (e) => { isDown = true; slider.style.cursor = 'grabbing'; startX = e.pageX - slider.offsetLeft; scrollLeft = slider.scrollLeft; });
+            slider.addEventListener('mouseleave', () => { isDown = false; slider.style.cursor = 'grab'; });
+            slider.addEventListener('mouseup', () => { isDown = false; slider.style.cursor = 'grab'; });
+            slider.addEventListener('mousemove', (e) => { if (!isDown) return; e.preventDefault(); const x = e.pageX - slider.offsetLeft; const walk = (x - startX) * 1.5; slider.scrollLeft = scrollLeft - walk; });
+            if (btnLeft && btnRight) { 
+                btnLeft.addEventListener('click', () => slider.scrollBy({ left: -scrollAmount, behavior: 'smooth' })); 
+                btnRight.addEventListener('click', () => slider.scrollBy({ left: scrollAmount, behavior: 'smooth' })); 
+            }
+        }
+    }
+
+    // 🚀 [키워드 토글 함수]
+    window.toggleKeywords = function() {
+        const wrapper = document.getElementById('keyword-wrapper'), toggleBtn = document.getElementById('keyword-toggle-btn');
+        if (wrapper.classList.contains('collapsed')) {
+            wrapper.classList.remove('collapsed'); wrapper.style.maxHeight = wrapper.scrollHeight + 'px'; toggleBtn.innerHTML = '- 접기';
+        } else {
+            wrapper.classList.add('collapsed'); wrapper.style.maxHeight = ''; toggleBtn.innerHTML = '+ 펼치기';
+        }
+    };
+
+    // 💡 [페이지 로딩 완료 후 실행되는 메인 로직]
+    document.addEventListener("DOMContentLoaded", function() {
+
+        // 1. 투표수 변환 (예: 15400 -> 15.4K)
+        document.querySelectorAll('.vote-count-badge').forEach(badge => {
+            const votes = badge.getAttribute('data-votes');
+            if (votes && parseInt(votes) > 0) { badge.textContent = formatVoteCount(votes); badge.style.display = 'inline-block'; } 
+            else { badge.style.display = 'none'; }
+        });
+
+        // 2. 가로 스크롤 이벤트 초기화
+        initRecSlider('actor-scroll-container', 'btn-actor-left', 'btn-actor-right', 400);
+
+        // 3. 키워드 배지 생성 및 클릭 이벤트 부여
+        const kwContainer = document.getElementById("keywords-container");
+        if (kwContainer && RAW_KEYWORDS) {
+            const cleanKw = RAW_KEYWORDS.replace(/[\[\]']/g, ""); 
+            const kwArray = cleanKw.split(",").map(k => k.trim()).filter(Boolean);
+            if (kwArray.length > 0) {
+                kwArray.forEach(kw => {
+                    const badge = document.createElement("span"); 
+                    // 💡 마우스 오버 효과 및 클릭 유도를 위한 클래스와 스타일 지정
+                    badge.className = "tag-badge shadow-sm keyword-clickable"; 
+                    badge.style.cursor = "pointer";
+                    badge.style.transition = "all 0.2s ease";
+                    badge.textContent = `#${kw}`; 
+                    
+                    // 💡 [클릭 이벤트] 누르면 API를 찔러 데이터를 가져옵니다.
+                    badge.onclick = function() { handleKeywordClick(this, kw); };
+                    kwContainer.appendChild(badge);
+                });
+                setTimeout(() => {
+                    const wrapper = document.getElementById('keyword-wrapper'), toggleBtn = document.getElementById('keyword-toggle-btn');
+                    if(wrapper && toggleBtn && wrapper.scrollHeight > 40) { toggleBtn.style.display = 'inline-block'; }
+                }, 50);
+            } else { kwContainer.closest(".detail-card").remove(); }
+        }
+
+        // =====================================================================
+        // 🚀 [핵심 로직] 키워드 클릭 시 동작하는 AJAX 통신 함수
+        // =====================================================================
+        function handleKeywordClick(badgeEl, keyword) {
+            const container = document.getElementById('keyword-rec-container');
+            if (!container) return;
+
+            // 1. 이미 까맣게 켜진(활성화된) 키워드를 다시 누르면 -> 영역 닫기 (토글)
+            if (badgeEl.classList.contains('active-kw')) {
+                badgeEl.classList.remove('active-kw');
+                badgeEl.style.backgroundColor = '#f1f5f9';
+                badgeEl.style.color = '#475569';
+                container.classList.add('d-none');
+                return;
+            }
+
+            // 2. 다른 모든 키워드의 색상 초기화 (라디오 버튼처럼 하나만 선택되게)
+            document.querySelectorAll('.keyword-clickable').forEach(el => {
+                el.classList.remove('active-kw');
+                el.style.backgroundColor = '#f1f5f9';
+                el.style.color = '#475569';
+            });
+
+            // 3. 방금 누른 키워드를 까맣게(활성화) 칠하기
+            badgeEl.classList.add('active-kw');
+            badgeEl.style.backgroundColor = '#0f172a';
+            badgeEl.style.color = '#ffffff';
+
+            // 4. 결과 영역 스르륵 열기 & 로딩 스피너 표시
+            container.classList.remove('d-none');
+            container.innerHTML = `<div class="w-100 text-center text-muted py-4"><div class="spinner-border spinner-border-sm me-2"></div>#${keyword} 연관작을 찾는 중...</div>`;
+
+            // 5. 백엔드 통신
+            fetch(`/api/keyword-rec/?keyword=${encodeURIComponent(keyword)}&type=${ITEM_TYPE}&exclude_id=${ITEM_ID}`)
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    // 영화와 시리즈 모두 결과가 없을 때
+                    if (data.movie_count === 0 && data.tv_count === 0) {
+                        container.innerHTML = `<div class="w-100 text-center text-muted py-4 fw-bold">해당 키워드를 가진 연관작이 없습니다.</div>`;
+                    } else {
+                        let combinedHTML = '';
+                        
+                        // 🚀 [핵심 순서 조절]
+                        // TV 상세 페이지면 -> TV를 위, 영화를 아래
+                        // 영화 상세 페이지면 -> 영화를 위, TV를 아래
+                        if (ITEM_TYPE === 'tv') {
+                            if (data.tv_count > 0) combinedHTML += data.tv_html;
+                            if (data.movie_count > 0) combinedHTML += `<div class="mt-4">${data.movie_html}</div>`;
+                        } else {
+                            if (data.movie_count > 0) combinedHTML += data.movie_html;
+                            if (data.tv_count > 0) combinedHTML += `<div class="mt-4">${data.tv_html}</div>`;
+                        }
+                        
+                        // 화면에 동시 주입
+                        container.innerHTML = combinedHTML;
+
+                        // 💡 생성된 두 개의 스크롤 영역(영화 row, 시리즈 row) 각각에 좌우 화살표 스와이프 기능 개별 활성화
+                        container.querySelectorAll('.rec-section-wrapper').forEach(section => {
+                            const scrollArea = section.querySelector('.recommended-scroll-container, .overflow-auto');
+                            const sliderBtns = section.querySelectorAll('button');
+                            if (scrollArea && sliderBtns.length >= 2) {
+                                sliderBtns[0].onclick = () => scrollArea.scrollBy({ left: -400, behavior: 'smooth' });
+                                sliderBtns[1].onclick = () => scrollArea.scrollBy({ left: 400, behavior: 'smooth' });
+                            }
+                        });
+
+                        // 💡 번역 및 투표수 포맷팅 재가동
+                        setTimeout(translateRecMovies, 100); // 💡 새로 만든 통합 번역 함수로 교체!
+                        container.querySelectorAll('.vote-count-badge').forEach(b => {
+                            const v = b.getAttribute('data-votes');
+                            if (v && parseInt(v) > 0) { b.textContent = formatVoteCount(v); b.style.display = 'inline-block'; }
+                            else b.style.display = 'none';
+                        });
+                    }
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                container.innerHTML = `<div class="w-100 text-center text-danger py-4">데이터를 불러오지 못했습니다.</div>`;
+            });
+        }
+
+        // 4. 번역 로직
+        if (!HAS_TRANSLATED_TITLE) {
+            const translateQuery = ITEM_TYPE === 'movie' ? `movie_id=${ITEM_ID}` : `series_id=${ITEM_ID}&type=tv`;
+            fetch(`/api/lazy-translate/?${translateQuery}`)
+                .then(res => res.json()).then(data => {
+                    if (data.status === 'success' && data.translated_title) {
+                        const titleEl = document.getElementById('movie-main-title'), labelEl = document.getElementById('movie-translated-label');
+                        titleEl.style.opacity = '0';
+                        setTimeout(() => {
+                            titleEl.innerText = "*" + data.translated_title; if(labelEl) labelEl.classList.remove('d-none');
+                            titleEl.style.transition = "opacity 0.5s ease"; titleEl.style.opacity = '1';
+                        }, 200);
+                        if (data.omo_avg_score !== undefined && data.omo_vote_count !== undefined) {
+                            const avgEl = document.getElementById('omo-avg-text'), voteEl = document.getElementById('omo-vote-text');
+                            if (avgEl && voteEl) { avgEl.textContent = Number(data.omo_avg_score).toFixed(1); voteEl.textContent = '👥 평가자 수 : ' + Number(data.omo_vote_count).toLocaleString() + '명'; }
+                        }
+                    }
+                }).catch(err => console.error(err));
+        }
+
+        // 5. 유튜브 예고편 자가 치유 및 자동 검색 로직
+        const trailerSection = document.getElementById('trailer-section');
+        const iframe = document.getElementById('trailer-iframe');
+        
+        if (CUSTOM_TRAILER) {
+            let embedUrl = CUSTOM_TRAILER;
+            
+            // 정식 youtube.com/embed/ 주소로 세탁
+            const match = CUSTOM_TRAILER.match(/(?:v=|\/)([0-9A-Za-z_-]{11})/);
+            if (match) {
+                embedUrl = "https://www.youtube.com/embed/" + match[1];
+            } else {
+                if (CUSTOM_TRAILER.includes("watch?v=")) embedUrl = CUSTOM_TRAILER.replace("watch?v=", "embed/");
+                else if (CUSTOM_TRAILER.includes("youtu.be/")) embedUrl = CUSTOM_TRAILER.replace("youtu.be/", "youtube.com/embed/");
+            }
+            
+            if (iframe) iframe.src = embedUrl;
+            if (trailerSection) {
+                trailerSection.classList.remove('d-none');
+                trailerSection.style.display = 'block';
+            }
+        } else {
+            // 💡 [핵심 UX 개선] 백엔드가 영상을 찾는 동안 유저가 기다릴 수 있도록, 
+            // 예고편 섹션을 숨기지 않고 즉시 화면에 띄웁니다! (반투명 로딩 상태)
+            if (trailerSection) {
+                trailerSection.classList.remove('d-none');
+                trailerSection.style.display = 'block';
+                trailerSection.style.opacity = '0.5'; // 영상이 도착할 때까지 반투명하게 대기
+            }
+            
+            fetch(`/api/lazy-trailer/?id=${ITEM_ID}&type=${ITEM_TYPE}`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status === 'success' && data.trailer_url) {
+                        // 백엔드가 영상을 찾아오면 즉시 꽂아넣고 선명하게 만듭니다!
+                        if (iframe) iframe.src = data.trailer_url;
+                        if (trailerSection) {
+                            trailerSection.style.transition = "opacity 0.5s ease";
+                            trailerSection.style.opacity = '1';
+                        }
+                    } else {
+                        // 검색을 다 뒤졌는데도 정말로 영상이 없다면 그때서야 다시 숨깁니다.
+                        if (trailerSection) {
+                            trailerSection.classList.add('d-none');
+                            trailerSection.style.display = 'none';
+                        }
+                    }
+                }).catch(err => {
+                    console.error("예고편 자가 치유 및 검색 실패:", err);
+                    if (trailerSection) {
+                        trailerSection.classList.add('d-none');
+                        trailerSection.style.display = 'none';
+                    }
+                });
+        }
+
+        // 6. [영화 전용] 제작 예산 및 흥행 수익 (is_tv가 아닐 때만 실행)
+        {% if not is_tv %}
+        function formatUSD(amount) { amount = parseInt(amount, 10); if (isNaN(amount) || amount <= 0) return "-"; return "$" + amount.toLocaleString('en-US'); }
+        const budgetText = document.getElementById('budget-text');
+        if (budgetText) budgetText.textContent = formatUSD("{{ movie.tmdb_budget|default:0 }}");
+        const revenueText = document.getElementById('revenue-text');
+        if (revenueText) revenueText.textContent = formatUSD("{{ movie.tmdb_revenue|default:0 }}");
+        {% endif %}
+        
+        // 7. 별점 및 리뷰 로직
+        const form = document.getElementById("rating-form"), inputs = form.querySelectorAll("input[name='score']"), fillLayer = document.getElementById("star-fill-layer"), scoreViewBox = document.getElementById("my-score-view-box"), reviewInput = document.getElementById("review-text-input"), btnSaveReview = document.getElementById("btn-save-review"), btnDeleteReview = document.getElementById("btn-delete-review");
+        let currentRating = MY_SCORE;
+
+        function toggleReviewInterface(score) {
+            const hasReview = reviewInput.value.trim().length > 0; btnSaveReview.removeAttribute("disabled");
+            if (score > 0) { reviewInput.removeAttribute("disabled"); reviewInput.placeholder = "이 작품에 대한 깊이 있는 감상평을 남겨보세요. (클릭 시 넓게 열립니다)"; } 
+            else {
+                reviewInput.setAttribute("disabled", "true");
+                if (!hasReview) { reviewInput.value = ""; reviewInput.placeholder = "별점을 먼저 선택해야 감상평을 작성할 수 있습니다."; } 
+                else { reviewInput.placeholder = "평점이 없어 감상평이 잠겼습니다. 수정하려면 평점을 다시 입력해 주세요."; }
+                reviewInput.style.minHeight = "54px";
+            }
+            if (hasReview) { btnDeleteReview.classList.remove("d-none"); } else { btnDeleteReview.classList.add("d-none"); }
+        }
+
+        if (currentRating > 0) { fillLayer.style.width = (currentRating * 10) + "%"; }
+        toggleReviewInterface(currentRating); 
+
+        function autoExpandTextarea() {
+            if (document.activeElement === reviewInput) return;
+            reviewInput.style.minHeight = "54px"; const scrollHeight = reviewInput.scrollHeight;
+            if (scrollHeight > 54) { reviewInput.style.minHeight = Math.min(scrollHeight + 4, 300) + "px"; }
+        }
+        reviewInput.addEventListener("input", autoExpandTextarea); reviewInput.addEventListener("blur", autoExpandTextarea);
+        inputs.forEach(input => { input.addEventListener("mouseenter", function() { fillLayer.style.width = (parseInt(this.value) * 10) + "%"; }); });
+        document.querySelector(".star-rating-container").addEventListener("mouseleave", function() { fillLayer.style.width = (currentRating * 10) + "%"; });
+
+        function sendRatingRequest(scoreValue, isReviewAction = false) {
+            const url = form.getAttribute("data-url"), csrftoken = form.querySelector("[name=csrfmiddlewaretoken]").value;
+            const isPublicToggle = document.getElementById("isPublicToggle"), isPublic = isPublicToggle ? isPublicToggle.checked : true;
+            const params = new URLSearchParams(); params.append("score", scoreValue); params.append("review", reviewInput.value.trim()); params.append("is_public", isPublic);
+            if (ITEM_TYPE === 'tv') params.append("type", "tv"); // 💡 시리즈일 경우 타입 꼬리표 추가!
+            
+            fetch(url, { method: "POST", headers: { "X-CSRFToken": csrftoken, "X-Requested-With": "XMLHttpRequest", "Content-Type": "application/x-www-form-urlencoded" }, body: params.toString() })
+            .then(response => { if (!response.ok) throw new Error("서버 에러 발생: " + response.status); return response.json(); })
+            .then(data => {
+                if (data.status === "success") {
+                    currentRating = data.current_score; fillLayer.style.width = (currentRating * 10) + "%";
+                    inputs.forEach(i => { if (parseInt(i.value) === currentRating && currentRating > 0) { i.checked = true; } else if (currentRating === 0) { i.checked = false; } });
+                    if (currentRating > 0) { scoreViewBox.innerHTML = `<div class="d-flex align-items-baseline gap-1.5"><span class="fs-2 fw-bold text-warning">${data.current_score}</span><span class="text-white-50" style="font-size: 14px;">/ 10</span></div>`; } 
+                    else { scoreViewBox.innerHTML = `<div class="fs-4 fw-bold text-white-50 py-1">평가 안 함</div>`; }
+                    toggleReviewInterface(currentRating); 
+                    
+                    if (data.omo_avg_score !== undefined && data.omo_vote_count !== undefined) {
+                        const avgEl = document.getElementById('omo-avg-text'), voteEl = document.getElementById('omo-vote-text');
+                        if (avgEl && voteEl) { avgEl.textContent = Number(data.omo_avg_score).toFixed(1); voteEl.textContent = '👥 평가자 수 : ' + Number(data.omo_vote_count).toLocaleString() + '명'; }
+                    }
+                    
+                    if (data.total_reviews_count !== undefined) {
+                        const moreBtn = document.getElementById('more-reviews-btn');
+                        const moreCount = document.getElementById('more-reviews-count');
+                        const reviewContainer = document.querySelector('.review-scroll-container'); 
+                        if (moreBtn && moreCount) {
+                            moreCount.textContent = data.total_reviews_count;
+                            if (data.total_reviews_count > 3) moreBtn.classList.remove('d-none');
+                            else moreBtn.classList.add('d-none');
+                        }
+                        if (reviewContainer && data.top_reviews) {
+                            if (data.top_reviews.length === 0) {
+                                reviewContainer.innerHTML = `<div class="w-100 text-center text-muted py-4 rounded bg-light border" style="font-size: 0.9rem;">아직 작성된 공개 리뷰가 없습니다.<br>첫 번째 리뷰를 남겨보세요!</div>`;
+                            } else {
+                                let newHTML = '';
+                                data.top_reviews.forEach(r => {
+                                    newHTML += `
+                                        <div class="review-card mb-3 p-3 bg-light rounded-3">
+                                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                                <span class="user-badge fw-bold"><i class="bi bi-person-circle"></i> ${r.username}</span>
+                                                <span class="rating-badge fw-bold" style="color: #ffc107;">★ ${r.score}</span>
+                                            </div>
+                                            <p class="review-text m-0">${r.review}</p>
+                                            <div class="review-date text-end text-muted mt-2" style="font-size: 11px;">${r.date}</div>
+                                        </div>
+                                    `;
+                                });
+                                reviewContainer.innerHTML = newHTML;
+                            }
+                        }
+                    }
+                    
+                    if (isReviewAction) { btnSaveReview.textContent = "저장 완료!"; setTimeout(() => btnSaveReview.textContent = "감상평 저장", 1500); }
+                } else { alert("저장에 실패했습니다: " + (data.message || "원인 불명")); if (isReviewAction) btnSaveReview.textContent = "감상평 저장"; }
+            }).catch(error => { console.error(error); alert("서버 통신 중 에러가 발생했습니다."); if (isReviewAction) btnSaveReview.textContent = "감상평 저장"; });
+        }
+
+        inputs.forEach(input => {
+            input.addEventListener("click", function(e) {
+                e.preventDefault(); const clickedValue = parseInt(this.value);
+                if (currentRating === clickedValue) { this.checked = false; currentRating = 0; sendRatingRequest(0, false); } 
+                else { inputs.forEach(i => i.checked = false); this.checked = true; currentRating = clickedValue; sendRatingRequest(clickedValue, false); }
+            });
+        });
+
+        btnDeleteReview.addEventListener("click", function() { if (confirm("감상평을 삭제하시면 절대 복구가 불가능합니다.\n\n정말 삭제하시겠습니까?")) { reviewInput.value = ""; btnSaveReview.textContent = "삭제 중..."; sendRatingRequest(currentRating, true); } });
+        btnSaveReview.addEventListener("click", function() { if (currentRating === 0) { alert("평점이 있을 때만 감상평 수정이 가능합니다."); return; } btnSaveReview.textContent = "저장 중..."; sendRatingRequest(currentRating, true); });
+
+        function formatVoteCount(votes) {
+            votes = parseInt(votes, 10); if (isNaN(votes) || votes <= 0) return "0";
+            let formatted = "";
+            if (votes >= 995000000000) { formatted = (votes / 1000000000000).toFixed(1) + "T"; }
+            else if (votes >= 995000000) { formatted = (votes / 1000000000).toFixed(1) + "B"; }
+            else if (votes >= 995000) { formatted = (votes / 1000000).toFixed(1) + "M"; }
+            else if (votes >= 1000) { formatted = (votes / 1000).toFixed(1) + "K"; }
+            else { formatted = votes.toString(); }
+            return formatted;
+        }
+    });
+
+    // 8. 유튜브 리뷰 로직
+    window.showReviews = function(category) {
+        document.querySelectorAll('.nav-link').forEach(btn => btn.classList.remove('active'));
+        document.getElementById(category === 'short' ? 'short-review-btn' : 'long-review-btn').classList.add('active');
+        loadYoutubeReviews(category);
+    };
+
+    function loadYoutubeReviews(category) {
+        const container = document.getElementById('youtube-results-container');
+        container.innerHTML = `<div class="w-100 text-center text-muted py-4"><div class="spinner-border spinner-border-sm me-2"></div>영상을 불러오는 중...</div>`;
+
+        fetch(`/api/youtube-reviews/${ITEM_ID}/?type=${ITEM_TYPE}`)
+            .then(res => res.json())
+            .then(data => {
+                container.innerHTML = '';
+                const list = data[category];
+                if (!list || list.length === 0) { container.innerHTML = '<div class="w-100 text-center text-muted py-3">해당 길이의 리뷰 영상이 없습니다.</div>'; return; }
+                
+                const excludeWords = ["예고편", "티저", "공식영상", "하이라이트", "쇼츠", "Shorts", "shorts"];
+                list.filter(v => !excludeWords.some(word => v.title.includes(word))).forEach(v => {
+                    container.innerHTML += `
+                        <div class="recommended-item" style="flex: 0 0 280px; max-width: 280px;">
+                            <a href="https://youtu.be/${v.id}" target="_blank" class="text-decoration-none">
+                                <div class="card border-0 shadow-sm h-100 transition-hover shadow-sm-hover">
+                                    <img src="${v.thumbnail}" class="card-img-top" style="border-radius: 8px 8px 0 0; aspect-ratio: 16/9; object-fit: cover;">
+                                    <div class="card-body p-2">
+                                        <p class="fw-bold text-dark mb-1" style="font-size: 13px; line-height: 1.3; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">
+                                            ${v.title}
+                                        </p>
+                                        <span class="badge bg-light text-secondary" style="font-size: 11px;">${Math.floor(v.duration/60)}분 ${v.duration%60}초</span>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>`;
+                });
+                initRecSlider('youtube-results-container', 'btn-yt-left', 'btn-yt-right', 600);
+            })
+            .catch(err => { container.innerHTML = '<div class="w-100 text-center text-danger py-3">영상을 불러오지 못했습니다.</div>'; });
+    }
+
+    document.addEventListener("DOMContentLoaded", () => { loadYoutubeReviews('short'); });
+
+
+
+    // =====================================================================
+    // 💡 9. 예고편 오류 신고 및 툴팁 로직 (추가됨!)
+    // =====================================================================
+    document.addEventListener('DOMContentLoaded', function() {
+        // 툴팁 활성화
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+
+        // 오류 신고 버튼 AJAX 통신
+        const reportBtn = document.getElementById('btn-report-trailer');
+        if(reportBtn) {
+            reportBtn.addEventListener('click', function() {
+                const targetId = this.getAttribute('data-id');
+                const targetType = this.getAttribute('data-type');
+                const countSpan = document.getElementById('trailer-report-count');
+                const textSpan = document.getElementById('trailer-report-text');
+
+                // 더블클릭 및 연타 방지
+                this.disabled = true;
+                
+                const formData = new FormData();
+                formData.append('id', targetId);
+                formData.append('type', targetType);
+                
+                // 장고 CSRF 토큰 스캔
+                function getCookie(name) {
+                    let cookieValue = null;
+                    if (document.cookie && document.cookie !== '') {
+                        const cookies = document.cookie.split(';');
+                        for (let i = 0; i < cookies.length; i++) {
+                            const cookie = cookies[i].trim();
+                            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                                break;
+                            }
+                        }
+                    }
+                    return cookieValue;
+                }
+
+                fetch('/api/report_trailer/', {
+                    method: 'POST',
+                    headers: { 'X-CSRFToken': getCookie('csrftoken') },
+                    body: formData
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if(data.status === 'success') {
+                        if(countSpan) countSpan.textContent = data.count; // 카운트 숫자 갱신
+                        if(textSpan) textSpan.textContent = '신고 완료';
+                        alert('오류 신고가 접수되었습니다. 관리자 확인 후 신속히 수정하겠습니다!');
+                    } else if(data.status === 'already') {
+                        if(textSpan) textSpan.textContent = '신고 완료';
+                        alert(data.message);
+                    } else {
+                        alert(data.message);
+                        reportBtn.disabled = false; // 캐시 제한 등 에러 시 버튼 다시 풀기
+                    }
+                })
+                .catch(err => {
+                    console.error(err);
+                    reportBtn.disabled = false;
+                    alert('통신 오류가 발생했습니다.');
+                });
+            });
+        }
+    });
+
+
+// =====================================================================
+    // 💡 10. 추천작/유사작 지연 번역 로직 (DB 보유작 한정)
+    // =====================================================================
+    window.translateRecMovies = function() {
+        // 상세페이지 하단 추천작(.rec-translate-target) + AJAX 연관작(.movie-title[data-movie-id]) 둘 다 스캔!
+        const recTargets = document.querySelectorAll('.rec-translate-target:not(.translated), .movie-title[data-movie-id]:not(.translated)');
+        if (recTargets.length === 0) return;
+
+        const movieIds = [];
+        const tvIds = [];
+        
+        recTargets.forEach(el => {
+            let id = el.getAttribute('data-id') || el.getAttribute('data-movie-id');
+            let type = el.getAttribute('data-type') || el.getAttribute('data-movie-type') || 'movie';
+            
+            // 💡 [핵심] 타입이 'movie'일 때만 ID를 수집합니다!
+            if (id && type === 'movie' && !movieIds.includes(id)) {
+                movieIds.push(id);
+            } else if (type === 'tv' || type === 'series') {
+                // 💡 시리즈(tv)는 번역하지 않을 것이므로, 영원히 API를 부르지 않게 'translated' 마크만 찍고 버립니다!
+                el.classList.add('translated');
+            }
+        });
+
+        function fetchTranslations(ids, type) {
+            if (ids.length === 0) return;
+            const params = new URLSearchParams();
+            ids.forEach(id => params.append('ids', id));
+            params.append('type', 'movie'); // 무조건 영화로 셋팅
+            
+            fetch(`/api/lazy-translate/?${params.toString()}`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status === 'success' && data.translations) {
+                        recTargets.forEach(el => {
+                            let elId = el.getAttribute('data-id') || el.getAttribute('data-movie-id');
+                            let elType = el.getAttribute('data-type') || el.getAttribute('data-movie-type') || 'movie';
+                            
+                            // 타입이 영화(movie)이고 번역 결과가 있을 때만 한글로 변환!
+                            if (elType === 'movie' && elId && data.translations[elId]) {
+                                el.classList.add('translated');
+                                el.style.opacity = '0';
+                                setTimeout(() => {
+                                    el.textContent = '*' + data.translations[elId];
+                                    el.title = '*' + data.translations[elId];
+                                    el.style.transition = 'opacity 0.3s ease';
+                                    el.style.opacity = '1';
+                                }, 150);
+                            } else {
+                                // 번역 불가이거나 결과가 없으면 다시 호출하지 않도록 마킹
+                                el.classList.add('translated');
+                            }
+                        });
+                    }
+                }).catch(console.error);
+        }
+
+        // 영화(movieIds) 배열만 구글 번역 API로 보냅니다!
+        fetchTranslations(movieIds);
+    };
+
+    document.addEventListener("DOMContentLoaded", function() {
+        // 메인 영화 번역과 겹치지 않게 살짝 지연시켜서 쾌적하게 호출합니다.
+        setTimeout(translateRecMovies, 300); 
+    });
+
+</script>

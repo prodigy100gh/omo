@@ -1,0 +1,17 @@
+<!-- ================= templates/partials/comp__detail_review_card.html (감상평 카드 조각) ================= -->
+
+<!-- 💡 is_all_view 변수가 넘어오면 '전체 보기' 페이지에 맞는 디자인(더보기 접기/시간 표시)으로 자동 변신합니다. -->
+<div class="review-card mb-3 p-3 bg-light rounded-3 border border-light-subtle review-item-card">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+        <span class="user-badge fw-bold"><i class="bi bi-person-circle me-1"></i> {{ rating.user.username }}</span>
+        <span class="rating-badge fw-bold" style="color: #ffc107;">★ {{ rating.score }}</span>
+    </div>
+    
+    <!-- 💡 전체 보기 페이지일 때만 clamped(글자 자르기) 클래스 적용 -->
+    <p class="review-text m-0 {% if is_all_view %}clamped mb-2{% endif %}">{{ rating.review }}</p>
+    
+    <div class="review-date text-end text-muted {% if not is_all_view %}mt-2{% endif %}" style="font-size: 11px;">
+        <!-- 💡 상세 페이지는 '년.월.일'만, 전체 보기 페이지는 '시간'까지 노출 -->
+        {{ rating.updated_at|date:"Y.m.d" }}{% if is_all_view %} {{ rating.updated_at|date:"H:i" }}{% endif %}
+    </div>
+</div>

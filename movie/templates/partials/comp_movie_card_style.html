@@ -1,0 +1,79 @@
+<!-- ================= templates/partials/comp_movie_card_style.html (영화 카드 스타일) ================= -->
+
+<style>
+    /* ================= [공통: 영화 카드 껍데기 및 포스터] ================= */
+    .movie-card { position: relative; border: 1px solid #f1f5f9; background: #ffffff; border-radius: 12px; overflow: hidden; isolation: isolate; transform: translateZ(0); transition: transform 0.3s cubic-bezier(0.215, 0.610, 0.355, 1), box-shadow 0.3s cubic-bezier(0.215, 0.610, 0.355, 1); box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02); display: flex; flex-direction: column; height: 100%; }
+    .movie-card:hover { transform: translateY(-4px); box-shadow: 0 12px 20px -5px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.02); border-color: #e2e8f0; }
+    
+    /* 🚀 [해결] 소수점(0.5) 렌더링 오류를 막기 위해 상하좌우 딱 떨어지는 '1px'로 고정합니다! 
+       껍데기가 12px이므로 안쪽 포스터의 곡률은 오차 없이 11px(12-1)로 맞춥니다. */
+    .card-bg-poster { position: absolute; top: 1px; left: 1px; right: 1px; bottom: 1px; z-index: 0; pointer-events: none; border-radius: 11px; overflow: hidden; transform: translateZ(0); }
+    .card-bg-poster img { width: 100%; height: 100%; object-fit: cover; object-position: center 40%; transition: transform 0.5s ease; border-radius: 11px; }
+    .movie-card:hover .card-bg-poster img { transform: scale(1.03); }
+
+    /* 💡 [수정] 기존 포스터 래퍼는 아이콘을 품고 비율(80%)을 유지해주는 '투명한 스페이서'로 변경 */
+    .poster-wrapper { position: relative; width: 100%; padding-top: 80%; background-color: transparent; overflow: hidden; z-index: 1; }
+    
+    /* 💡 [수정] 카드 링크가 정보 영역을 꽉 채우도록 flex 배치 추가 */
+    .card-link { text-decoration: none; color: inherit; display: flex; flex-direction: column; height: 100%; position: relative; z-index: 1; }
+
+    /* ================= [공통: 텍스트 및 뱃지 정보] ================= */
+    /* 🚀 개발자님이 세팅하신 투명도 0.95, 블러 0px 그대로 원복! 절대 안 건드립니다. */
+    .movie-info-wrap { padding: 4px 6px 4px; background-color: rgba(255, 255, 255, 0.95); backdrop-filter: blur(0px); -webkit-backdrop-filter: blur(0px); flex-grow: 1; position: relative; z-index: 1; }
+    
+    /* 🚀 1. 기본 상태 (짧은 제목 - 원본 비율 유지) */
+    .movie-title { 
+        font-size: 14.5px; 
+        font-weight: 700; 
+        color: #0f172a; 
+        white-space: nowrap; 
+        overflow: hidden; 
+        text-overflow: ellipsis; 
+        margin-bottom: 0px; 
+        line-height: 1.2; 
+        letter-spacing: -0.3px; 
+        transform-origin: left center;
+        display: block; 
+        transition: all 0.2s ease;
+    }
+    
+    /* 🚀 2. 중간 압축 (10 ~ 14글자: 약간 홀쭉하게) */
+    .movie-title.title-long {
+        letter-spacing: -0.7px;
+        transform: scaleX(0.9);
+        width: 111%;
+    }
+
+    /* 🚀 3. 최대 압축 (15글자 이상: 많이 홀쭉하게) */
+    .movie-title.title-xlong {
+        letter-spacing: -1.0px;
+        transform: scaleX(0.7);
+        width: 142%;
+    }
+    .movie-meta { font-size: 11px; color: #64748b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 0px; line-height: 1.1; }
+    .rating-badge { font-size: 10px; font-weight: 700; padding: 2px 5px; border-radius: 4px; white-space: nowrap; }
+    .bg-warning-subtle { background-color: rgba(245, 158, 11, 0.09) !important; color: #b45309 !important; }
+    .bg-primary-subtle { background-color: rgba(59, 130, 246, 0.09) !important; color: #1d4ed8 !important; }
+    .vote-count-badge { display: inline-block; font-size: 10px; font-weight: 600; color: #64748b; background-color: #f8fafc; padding: 2px 4px; border-radius: 4px; border: 1px solid #f1f5f9; }
+    .rating-badge-container { display: inline-flex; align-items: center; gap: 4px; width: 100%; overflow: hidden; }
+
+    /* ================= [공통: 오버레이 버튼 (찜/공유/완결)] ================= */
+    .icon-overlay-btn { position: absolute; width: 22px; height: 22px; border-radius: 50%; background-color: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); color: rgba(255, 255, 255, 0.9); border: 1px solid rgba(255, 255, 255, 0.2); display: flex; align-items: center; justify-content: center; font-size: 11px; cursor: pointer; z-index: 20; transition: all 0.2s ease; }
+    .icon-overlay-btn:hover { background-color: rgba(15, 23, 42, 0.9); transform: scale(1.1); }
+    .watchlist-btn { top: 6px; right: 6px; }
+    .watchlist-btn.active { background-color: #ff2f6e; color: #ffffff; border-color: #ff2f6e; }
+    .share-btn { top: 34px; right: 6px; }
+
+    /* ================= [공통: 하단 0.5점 단위 별점] ================= */
+    /* 🚀 투명도 0.95, 블러 0px 원복. 
+       포스터는 1px 안으로 들어갔지만, 이 덮개 영역은 끝까지 덮도록 11px을 유지합니다. (까만 찌꺼기 원천 봉쇄) */
+    .rating-form-wrapper { background-color: rgba(255, 255, 255, 0.95); backdrop-filter: blur(0px); -webkit-backdrop-filter: blur(0px); border-top: 1px solid rgba(0, 0, 0, 0.1); border-bottom-left-radius: 11px; border-bottom-right-radius: 11px; display: flex; justify-content: center; align-items: center; height: 30px; position: relative; z-index: 1; }
+    
+    .star-rating { display: flex; flex-direction: row-reverse; justify-content: center; align-items: center; height: 18px; position: relative; top: -3px; }
+    .star-rating input { position: absolute; opacity: 0; width: 0; height: 0; pointer-events: none; }
+    .star-rating label { font-size: 18px; line-height: 1; color: #e2e8f0; cursor: pointer; display: inline-block; white-space: nowrap; transition: color 0.15s ease, transform 0.1s ease; text-align: center; }
+    .star-rating label.full { width: 1em; overflow: visible; direction: ltr; }
+    .star-rating label.half { width: 0.5em; overflow: hidden; direction: ltr; margin-right: -0.5em; z-index: 2; position: relative; }
+    .star-rating input:checked ~ label, .star-rating label:hover, .star-rating label:hover ~ label { color: #f59e0b !important; }
+    .star-rating label:active { transform: scale(1.2); }
+</style>

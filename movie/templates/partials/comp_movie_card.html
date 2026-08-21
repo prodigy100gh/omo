@@ -1,0 +1,117 @@
+<!-- ================= templates/partials/comp_movie_card.html (영화 카드) ================= -->
+
+<div class="movie-card" id="{{ card_prefix|default:'m-' }}card-{{ movie.id }}" data-translated-title="{{ movie.translated_title|default:'' }}">
+    
+    <!-- 🚀 [신규 추가] 카드 가장 밑바닥에 전체를 덮는 포스터 배경 출력 -->
+    <div class="card-bg-poster">
+        {% if movie.tmdb_poster_url %}
+            <!-- 💡 방금 만든 저용량 썸네일(poster_thumb_url)을 부르고, loading="lazy"로 화면에 보일 때만 로딩하게 만듭니다! -->
+            <img src="{{ movie.poster_thumb_url|default:movie.tmdb_poster_url }}" alt="{{ movie.tmdb_title }}" loading="lazy">
+        {% else %}
+            <div class="d-flex flex-column align-items-center justify-content-center text-muted w-100 h-100" style="background-color: #f1f5f9; font-size: 12px;"><span>No Image</span></div>
+        {% endif %}
+    </div>
+
+    <!-- 💡 링크: 영화 vs TV 자동 분기 -->
+    <a href="{% if current_type == 'tv' or is_tv or '시리즈' in page_title %}{% url 'tv_detail' movie.id %}{% else %}{% url 'movie_detail' movie.id %}{% endif %}" class="card-link flex-grow-1">
+        
+        <!-- 💡 [수정] 포스터 이미지는 배경으로 빠졌고, 이 영역은 아이콘 위치 고정 + 비율(80%) 유지용 투명 스페이서 역할 수행 -->
+        <div class="poster-wrapper">
+            <!-- OTT 로고 -->
+            <div style="position: absolute; top: 6px; left: 6px; bottom: 6px; display: flex; flex-direction: column; gap: 4px; overflow: hidden; z-index: 10; padding-right: 5px; padding-bottom: 5px;">
+                {% if movie.display_ott_providers %}
+                    {% for prov in movie.display_ott_providers %}
+                        <img src="{{ prov.logo_url }}" alt="{{ prov.provider_name }}" title="{{ prov.provider_name }}" style="width: 22px; height: 22px; border-radius: 4px; flex-shrink: 0; box-shadow: 2px 2px 4px rgba(0,0,0,0.5);">
+                    {% endfor %}
+                {% endif %}
+            </div>
+
+            <!-- 찜하기 / 공유하기 버튼 -->
+            <button type="button" class="icon-overlay-btn watchlist-btn {% if movie.is_watchlisted %}active{% endif %}" data-movie-id="{{ movie.id }}" data-type="{% if current_type == 'tv' or is_tv or '시리즈' in page_title %}tv{% else %}movie{% endif %}" onclick="toggleWatchlist(event, this)" title="보고싶어요">
+                <i class="bi {% if movie.is_watchlisted %}bi-bookmark-fill{% else %}bi-bookmark{% endif %}"></i>
+            </button>
+            <button type="button" class="icon-overlay-btn share-btn" onclick="shareNative(event, '{% if movie.translated_title and movie.translated_title != '힣 번역 불가' %}*{{ movie.translated_title|escapejs }}{% else %}{{ movie.tmdb_title|escapejs }}{% endif %}', '{% if current_type == 'tv' or is_tv or '시리즈' in page_title %}{% url 'tv_detail' movie.id %}{% else %}{% url 'movie_detail' movie.id %}{% endif %}')" title="공유하기">
+                <i class="bi bi-share-fill"></i>
+            </button>
+            
+            <!-- 완결 뱃지 -->
+            {% if movie.tmdb_status == 'Ended' %}
+            <div class="icon-overlay-btn" style="bottom: 6px; right: 6px; top: auto; font-weight: 700; cursor: help; font-size: 12px;" title="시리즈 완결">완</div>
+            {% endif %}
+        </div>
+        
+        <!-- 💡 텍스트 정보 영역 (투명도 20% 적용 완료) -->
+        <div class="movie-info-wrap">
+            <!-- 🚀 [가변 장평 적용] 번역 제목(t_len) 또는 원본 제목(tmdb_len)의 글자 수를 세서 14글자, 9글자 기준으로 클래스를 동적 부여합니다 -->
+            {% with t_len=movie.translated_title|length tmdb_len=movie.tmdb_title|length %}
+            <div class="movie-title {% if t_len > 15 or tmdb_len > 15 %}title-xlong{% elif t_len > 10 or tmdb_len > 10 %}title-long{% endif %}" title="{% if current_type != 'tv' and movie.translated_title and movie.translated_title != '힣 번역 불가' %}{{ movie.translated_title }}{% else %}{{ movie.tmdb_title }}{% endif %}">
+                {% if current_type != 'tv' and movie.translated_title and movie.translated_title != movie.tmdb_title and movie.translated_title != '힣 번역 불가' %}*{{ movie.translated_title }}{% else %}{{ movie.tmdb_title }}{% endif %}
+            </div>
+            {% endwith %}
+            <div class="movie-meta text-truncate" title="{{ movie.card_display_genre|default:'정보 없음' }}{% if movie.tmdb_production_country_kr %} | {{ movie.tmdb_production_country_kr }}{% endif %}">
+                {% now "Y-m-d" as today_date %}{% now "Y" as current_year %}
+                {% if current_type == 'tv' or is_tv or '시리즈' in page_title %}
+                    {% if movie.tmdb_release_date|date:"Y-m-d" > today_date or movie.first_air_date|date:"Y-m-d" > today_date or not movie.tmdb_release_date and not movie.first_air_date and movie.imdb_release_date > current_year %}
+                        <span class="text-danger" style="font-weight: 800;">예정</span>
+                    {% else %}
+                        {{ movie.display_year|default:"----" }}
+                    {% endif %}
+                {% else %}
+                    {% if movie.tmdb_release_date|date:"Y-m-d" > today_date or not movie.tmdb_release_date and movie.imdb_release_date > current_year %}
+                        <span class="text-danger" style="font-weight: 800;">예정</span>
+                    {% else %}
+                        {{ movie.display_year|default:"----" }}
+                    {% endif %}
+                {% endif %}{% if movie.card_short_genre and movie.card_short_genre != "정보 없음" and movie.card_short_genre != "장르 없음" %}&nbsp;&nbsp;{{ movie.card_short_genre }}{% endif %}{% if movie.short_country and movie.short_country != "정보 없음" and movie.short_country != "None" and movie.short_country != "" %}&nbsp;&nbsp;{{ movie.short_country }}{% endif %}
+            </div>
+
+            <div class="d-flex rating-badge-container" id="badge-container-{{ movie.id }}">
+                <span class="rating-badge bg-warning-subtle text-warning-emphasis">{% if current_type == 'tv' or is_tv or '시리즈' in page_title %}📺{% else %}🎬{% endif %} {% if movie.imdb_rating > 0 %}{{ movie.imdb_rating|floatformat:1 }}{% else %}-{% endif %}</span>
+                <span class="vote-count-badge" data-votes="{{ movie.imdb_vote_count|default:0 }}"></span>
+                {% if movie.my_score > 0 %}
+                    <span class="rating-badge bg-primary-subtle text-primary my-score-badge">★ {{ movie.my_score|floatformat:"0" }}</span>
+                {% endif %}
+            </div>
+        </div>
+    </a>
+    
+    <!-- 💡 별점 폼 영역 (투명도 20% 적용 완료) -->
+    <div class="rating-form-wrapper">
+        <form method="POST" action="{% if current_type == 'tv' or is_tv or '시리즈' in page_title %}{% url 'rate_tv' movie.id %}{% else %}{% url 'rate_movie' movie.id %}{% endif %}" class="m-0 rating-async-form" data-movie-id="{{ movie.id }}">
+            {% csrf_token %}
+            {% if current_type == 'tv' or is_tv or '시리즈' in page_title %}<input type="hidden" name="type" value="tv">{% endif %}
+            <div class="star-rating" data-current="{% if movie.my_score > 0 %}{{ movie.my_score }}{% else %}0{% endif %}">
+                
+                <input type="radio" id="{{ card_prefix|default:'m-' }}star5-{{ movie.id }}" name="score" value="10" {% if movie.my_score == 10 %}checked{% endif %} onclick="sendRatingAsync(this)"/>
+                <label class="full" for="{{ card_prefix|default:'m-' }}star5-{{ movie.id }}">★</label>
+                
+                <input type="radio" id="{{ card_prefix|default:'m-' }}star45-{{ movie.id }}" name="score" value="9" {% if movie.my_score == 9 %}checked{% endif %} onclick="sendRatingAsync(this)"/>
+                <label class="half" for="{{ card_prefix|default:'m-' }}star45-{{ movie.id }}">★</label>
+                
+                <input type="radio" id="{{ card_prefix|default:'m-' }}star4-{{ movie.id }}" name="score" value="8" {% if movie.my_score == 8 %}checked{% endif %} onclick="sendRatingAsync(this)"/>
+                <label class="full" for="{{ card_prefix|default:'m-' }}star4-{{ movie.id }}">★</label>
+                
+                <input type="radio" id="{{ card_prefix|default:'m-' }}star35-{{ movie.id }}" name="score" value="7" {% if movie.my_score == 7 %}checked{% endif %} onclick="sendRatingAsync(this)"/>
+                <label class="half" for="{{ card_prefix|default:'m-' }}star35-{{ movie.id }}">★</label>
+                
+                <input type="radio" id="{{ card_prefix|default:'m-' }}star3-{{ movie.id }}" name="score" value="6" {% if movie.my_score == 6 %}checked{% endif %} onclick="sendRatingAsync(this)"/>
+                <label class="full" for="{{ card_prefix|default:'m-' }}star3-{{ movie.id }}">★</label>
+                
+                <input type="radio" id="{{ card_prefix|default:'m-' }}star25-{{ movie.id }}" name="score" value="5" {% if movie.my_score == 5 %}checked{% endif %} onclick="sendRatingAsync(this)"/>
+                <label class="half" for="{{ card_prefix|default:'m-' }}star25-{{ movie.id }}">★</label>
+                
+                <input type="radio" id="{{ card_prefix|default:'m-' }}star2-{{ movie.id }}" name="score" value="4" {% if movie.my_score == 4 %}checked{% endif %} onclick="sendRatingAsync(this)"/>
+                <label class="full" for="{{ card_prefix|default:'m-' }}star2-{{ movie.id }}">★</label>
+                
+                <input type="radio" id="{{ card_prefix|default:'m-' }}star15-{{ movie.id }}" name="score" value="3" {% if movie.my_score == 3 %}checked{% endif %} onclick="sendRatingAsync(this)"/>
+                <label class="half" for="{{ card_prefix|default:'m-' }}star15-{{ movie.id }}">★</label>
+                
+                <input type="radio" id="{{ card_prefix|default:'m-' }}star1-{{ movie.id }}" name="score" value="2" {% if movie.my_score == 2 %}checked{% endif %} onclick="sendRatingAsync(this)"/>
+                <label class="full" for="{{ card_prefix|default:'m-' }}star1-{{ movie.id }}">★</label>
+                
+                <input type="radio" id="{{ card_prefix|default:'m-' }}star05-{{ movie.id }}" name="score" value="1" {% if movie.my_score == 1 %}checked{% endif %} onclick="sendRatingAsync(this)"/>
+                <label class="half" for="{{ card_prefix|default:'m-' }}star05-{{ movie.id }}">★</label>
+            </div>
+        </form>
+    </div>
+</div>

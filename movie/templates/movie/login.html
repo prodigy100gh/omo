@@ -1,0 +1,158 @@
+<!-- ================= templates/movie/login.html (로그인 화면) ================= -->
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OMO 오늘 모 볼까?! - 로그인</title>
+    <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+    <style>
+        * { box-sizing: border-box; }
+        
+        /* 💡 회원가입 페이지와 완전히 동일한 중앙 정렬 및 dvh 적용 */
+        body { 
+            font-family: 'Pretendard', sans-serif; 
+            background-color: #f8f9fc; 
+            color: #333333;
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            min-height: 100dvh; 
+            margin: 0;
+            padding: 20px; 
+        }
+
+        /* 💡 억지로 주던 margin 여백을 지우고 padding 30px로 통일 */
+        .auth-container { 
+            width: 100%;
+            max-width: 480px; 
+            padding: 30px; 
+            background-color: #ffffff; 
+            border: 1px solid #eaeaea;
+            border-radius: 16px; 
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.04); 
+        }
+
+        .auth-container h2 { 
+            text-align: center; 
+            margin-top: 0;
+            margin-bottom: 30px;
+            font-weight: 700;
+            font-size: 26px;
+            color: #111111; 
+        }
+        
+        .field-group { 
+            display: flex; 
+            flex-direction: column; 
+            margin-bottom: 24px; 
+            position: relative; 
+        }
+        .auth-container label { 
+            font-size: 14px; 
+            color: #555555; 
+            margin-bottom: 8px; 
+            font-weight: 600;
+        }
+        .auth-container input { 
+            padding: 14px 15px; 
+            background-color: #ffffff; 
+            border: 1px solid #dcdcdc; 
+            border-radius: 8px; 
+            color: #111;
+            font-size: 15px;
+            transition: all 0.2s ease; 
+        }
+        .auth-container input:focus { 
+            outline: none; 
+            border-color: #111111; 
+            box-shadow: 0 0 0 3px rgba(17, 17, 17, 0.08); 
+        }
+
+        /* 💡 버튼에도 회원가입과 동일한 클릭(active) 애니메이션 적용 */
+        .btn { 
+            width: 100%; 
+            padding: 16px; 
+            background-color: #111111; 
+            color: white; 
+            border: none; 
+            border-radius: 8px; 
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer; 
+            margin-top: 10px;
+            transition: background-color 0.2s, transform 0.1s;
+        }
+        .btn:hover { background-color: #333333; }
+        .btn:active { transform: scale(0.98); }
+
+        .errorlist {
+            color: #e03131;
+            font-size: 13px;
+            font-weight: bold;
+            list-style-type: none;
+            padding: 12px;
+            margin: 0 0 10px 0;
+            background-color: #fff5f5;
+            border-left: 4px solid #e03131;
+            border-radius: 4px;
+        }
+        .login-link { text-align: center; font-size: 14px; color: #777; margin-top: 25px; }
+        .login-link a { color: #111; text-decoration: none; font-weight: bold; transition: color 0.2s; }
+        .login-link a:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+    <div class="auth-container">
+        <h2>OMO - 오늘 모 볼까?!<br>로그인</h2>
+        <form method="POST">
+            {% csrf_token %}
+            
+            {% if form.non_field_errors %}
+                <div class="errorlist">{{ form.non_field_errors }}</div>
+            {% endif %}
+
+            <div class="field-group">
+                <label for="{{ form.username.id_for_label }}">이메일 주소</label>
+                {{ form.username }}
+                {% if form.username.errors %}<div class="errorlist">{{ form.username.errors }}</div>{% endif %}
+            </div>
+
+            <div class="field-group">
+                <label for="{{ form.password.id_for_label }}">비밀번호</label>
+                {{ form.password }}
+                {% if form.password.errors %}<div class="errorlist">{{ form.password.errors }}</div>{% endif %}
+            </div>
+
+            <button type="submit" class="btn">로그인</button>
+        </form>
+        <div class="login-link">
+            아직 계정이 없으신가요? <a href="{% url 'signup' %}">회원가입</a>
+        </div>
+    </div>
+
+
+
+
+
+    
+    <!-- 💡 테스트용 자동 로그인 세팅 (실제 서비스 배포 전에는 꼭 지워주세요!) -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const emailInput = document.getElementById('id_username');
+            const passwordInput = document.getElementById('id_password');
+            
+            if (emailInput && passwordInput) {
+                // 👇 본인이 자주 쓰는 테스트용 아이디와 비밀번호로 바꿔주세요!
+                emailInput.value = 'a@a.com'; 
+                passwordInput.value = '1';
+            }
+        });
+    </script>
+
+<!-- 💡 공통 로딩 오버레이 & 페이지 이동 딜레이 -->
+    {% include 'partials/loading_overlay.html' %}
+
+</body>
+</html>

@@ -1,0 +1,481 @@
+<!-- ================= templates/movie/person_detail.html (인물 상세 화면) ================= -->
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <link class="movie-favicon" rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>👤</text></svg>">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OMO - {{ person.name }}</title>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    
+    <style>
+        /* 기본 레이아웃 및 뼈대 */
+        body { font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, sans-serif; background-color: #f8fafc; color: #0f172a; height: 100vh; height: 100dvh; overflow: hidden; display: flex; flex-direction: column; letter-spacing: -0.02em; transition: opacity 0.15s ease-in-out; }
+        body.page-transitioning { opacity: 0.5; pointer-events: none; }
+        .fixed-header { flex-shrink: 0; background: #ffffff; z-index: 1020; border-bottom: 1px solid #f1f5f9; padding-top: 0.5rem !important; padding-bottom: 6px !important; }
+        .scrollable-content { flex-grow: 1; overflow-y: scroll; -webkit-overflow-scrolling: touch; padding-top: 0.5rem !important; padding-bottom: 45px; }
+        .fixed-footer-flex { flex-shrink: 0; display: flex; justify-content: center; align-items: center; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(8px); z-index: 1020; border-top: 1px solid #f1f5f9; height: 36px; }
+
+        .detail-card { background-color: #ffffff; border-radius: 14px; padding: 20px 24px; border: 1px solid #f1f5f9; box-shadow: 0 1px 3px rgba(0,0,0,0.02); }
+
+	/* 🚀 [신규 기능] 약력 5줄 스마트 접기 UI */
+        .bio-collapsed {
+            display: -webkit-box;
+            -webkit-line-clamp: 5;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+	/* 🚀 [신규 기능] 인물 상세 전용: 카드 밑에 딱 붙는 역할/배역 꼬리표 */
+        .person-role-tag {
+            background-color: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-top: none;
+            border-bottom-left-radius: 12px;
+            border-bottom-right-radius: 12px;
+            padding: 6px 8px;
+            font-size: 11.5px;
+            font-weight: 600;
+            text-align: center;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-top: -4px; /* 카드의 아랫부분을 살짝 파고들어서 한 몸처럼 보이게 함 */
+            position: relative;
+            z-index: 1; /* 카드보다 아래에 깔리게 */
+        }
+
+        @media (max-width: 576px) {
+            .mobile-logo-text { font-size: 1.1rem !important; letter-spacing: -1px !important; }
+            .mobile-search-input { width: 75px !important; font-size: 12px !important; }
+            .mobile-head-btn { padding-left: 6px !important; padding-right: 6px !important; font-size: 12px !important; }
+            .mobile-form-gap { gap: 4px !important; }
+            .detail-card { padding: 16px; margin-bottom: 12px; }
+        }
+
+	/* 🚀 [모바일 전용] 인물 프로필 좌우 배치 레이아웃 */
+        .profile-img-card { width: 100%; height: auto; aspect-ratio: 2/3; }
+        
+        @media (max-width: 767.98px) {
+            .profile-mobile-container { display: flex; flex-direction: row; gap: 16px; align-items: flex-start; margin-bottom: 4px; }
+            /* 사진 크기를 가로 115px로 고정하고 왼쪽에 딱 붙임 */
+            .profile-img-card { width: 140px !important; flex-shrink: 0; margin-bottom: 0 !important; }
+            /* 텍스트 영역이 우측 남은 공간 꽉 채우기 */
+            .profile-text-area { flex-grow: 1; min-width: 0; }
+            /* 모바일에서는 '인물 정보' 흰 박스의 불필요한 여백과 테두리를 없애서 깔끔하게 밀착 */
+            .profile-detail-card { padding: 0 !important; background: transparent !important; border: none !important; box-shadow: none !important; }
+        }
+
+    </style>
+
+    <!-- 💡 영화 카드 공통 CSS 불러오기 -->
+    {% include 'partials/comp_movie_card_style.html' %}
+
+</head>
+<body>
+
+
+    <header class="fixed-header shadow-sm">
+        <div class="container px-2 px-sm-3">
+            {% include 'partials/layout_top_nav.html' %}
+        </div>
+    </header>
+
+    <main class="scrollable-content py-4">
+        <div class="container mb-4" style="max-width: 960px;">
+            
+            {% if not person %}
+                <div class="alert alert-danger text-center shadow-sm">인물 정보를 불러올 수 없거나 존재하지 않는 ID입니다.</div>
+            {% else %}
+                <div class="row">
+                    <!-- 좌측 프로필 -->
+                    <div class="col-md-3 mb-4">
+                        <div class="profile-mobile-container">
+                            
+                            <!-- 1. 사진 영역 (모바일: 좌측, PC: 상단) -->
+                            <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-4 profile-img-card">
+                                {% if person.profile_path %}
+                                    <img src="https://image.tmdb.org/t/p/w500{{ person.profile_path }}" alt="{{ person.name }}" class="w-100 h-100" style="object-fit: cover;">
+                                {% else %}
+                                    <div class="bg-secondary d-flex align-items-center justify-content-center w-100 h-100" style="min-height: 170px;">
+                                        <i class="bi bi-person-fill text-white" style="font-size: 4rem;"></i>
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <!-- 2. 텍스트 영역 (모바일: 우측, PC: 사진 아래) -->
+                            <div class="profile-text-area">
+                                <!-- 🚀 모바일 전용 이름 (우측 다큐 제외 스위치 추가) -->
+                                <div class="d-flex justify-content-between align-items-center mb-2 d-md-none px-1">
+                                    <h1 class="fw-bold m-0" style="font-size: 1.4rem; line-height: 1.2; letter-spacing: -0.5px;">
+                                        {{ person.name }}
+                                        {% if person.english_name and person.english_name != person.name %}
+                                            <span class="text-muted fw-normal fs-6 d-block mt-1">{{ person.english_name }}</span>
+                                        {% endif %}
+                                    </h1>
+                                    <div class="form-check form-switch m-0 d-flex align-items-center gap-1 flex-shrink-0">
+                                        <input class="form-check-input doc-filter-cb m-0" type="checkbox" id="docFilterMobile" checked style="width: 2.2em; height: 1.1em;">
+                                        <label class="form-check-label fw-bold text-muted mb-0" for="docFilterMobile" style="font-size: 11.5px; padding-top: 1px;">다큐 제외</label>
+                                    </div>
+                                </div>
+
+                                <!-- 인물 정보 리스트 -->
+                                <div class="detail-card p-3 profile-detail-card">
+                                    <h5 class="fw-bold mb-3 fs-6 d-none d-md-block">인물 정보</h5>
+                                    <ul class="list-unstyled text-muted small m-0" style="font-size: 12.5px; line-height: 1.6;">
+                                        <li class="mb-1">
+                                            <strong class="text-dark">직업 :</strong> 
+                                            {% if person.known_for_department == 'Acting' %}배우
+                                            {% elif person.known_for_department == 'Directing' %}감독
+                                            {% elif person.known_for_department == 'Writing' %}각본가
+                                            {% else %}{{ person.known_for_department }}{% endif %}
+                                        </li>
+                                        
+                                        {% if person.english_name and person.english_name != person.name %}
+                                        <li class="mb-1 text-truncate" title="{{ person.english_name }}">
+                                            <strong class="text-dark">본명 :</strong> {{ person.english_name }}
+                                        </li>
+                                        {% elif person.also_known_as %}
+                                        <li class="mb-1 text-truncate" title="{{ person.also_known_as|join:', ' }}">
+                                            <strong class="text-dark">다른 이름 :</strong> {{ person.also_known_as|first }}
+                                        </li>
+                                        {% endif %}
+
+                                        {% if person.birthday %}
+                                        <li class="mb-1"><strong class="text-dark">출생 :</strong> {{ person.birthday }}</li>
+                                        {% endif %}
+                                        {% if person.place_of_birth %}
+                                        <li class="mb-0" style="word-break: keep-all;">
+                                            <strong class="text-dark">출생지 :</strong> {{ person.place_of_birth }}
+                                        </li>
+                                        {% endif %}
+                                    </ul>
+                                </div>
+                            </div>
+                            
+                        </div>
+                    </div>
+
+                    <!-- 우측 리스트 영역 -->
+                    <div class="col-md-9">
+                        <!-- 🚀 [PC 전용 이름 (우측 다큐 제외 스위치 추가)] -->
+                        <div class="d-none d-md-flex justify-content-between align-items-end mb-4 px-2 border-bottom pb-2">
+                            <h1 class="fw-bold m-0 d-flex align-items-end flex-wrap gap-2">
+                                {{ person.name }}
+                                {% if person.english_name and person.english_name != person.name %}
+                                    <span class="text-muted fw-normal pb-1" style="font-size: 1.2rem;">{{ person.english_name }}</span>
+                                {% endif %}
+                            </h1>
+                            <div class="form-check form-switch m-0 d-flex align-items-center gap-2 mb-1">
+                                <input class="form-check-input doc-filter-cb m-0" type="checkbox" id="docFilterPC" checked style="width: 2.5em; height: 1.25em; cursor: pointer;">
+                                <label class="form-check-label fw-bold text-muted mb-0" for="docFilterPC" style="font-size: 14px; cursor: pointer; padding-top: 2px;">다큐 제외</label>
+                            </div>
+                        </div>
+
+			{% if person.biography %}
+                        <div class="detail-card mb-4">
+                            <h5 class="fw-bold mb-3 fs-6">약력</h5>
+                            <p id="bio-text" class="text-muted mb-0 bio-collapsed" style="line-height: 1.7; white-space: pre-wrap; font-size: 14.5px;">{{ person.biography }}</p>
+                            <!-- 💡 자바스크립트가 5줄을 넘는지 계산해서 필요할 때만 버튼을 띄워줍니다 -->
+                            <button class="btn btn-link text-decoration-none p-0 mt-2 text-muted fw-bold" style="font-size: 12px; display: none;" id="bio-toggle-btn" onclick="toggleBio()">+ 더보기</button>
+                        </div>
+                        {% endif %}
+
+                        <!-- ============================================== -->
+                        <!-- 🚀 [스마트 정렬 컨테이너] '덩어리(그룹)' 단위 자동 정렬 -->
+                        <!-- ============================================== -->
+                        <div id="smart-credits-container" data-known-dept="{{ person.known_for_department|default:'' }}">
+                            
+                            <!-- 🎬 [배우 덩어리] 출연작 그룹 -->
+                            <div class="credit-group" data-group="Acting">
+                                <!-- 1. 영화 출연작 -->
+                                {% if acted_movies %}
+                                <div class="credit-section mb-5 px-2">
+                                    <h5 class="fw-bold mb-3"><i class="bi bi-film text-primary me-2"></i>영화 출연작 <span class="badge bg-secondary rounded-pill ms-1 section-count" style="font-size: 11px;">{{ acted_movies|length }}</span></h5>
+                                    <div class="row row-cols-3 row-cols-md-4 row-cols-lg-5 g-2">
+                                        {% for movie in acted_movies %}
+                                        <!-- 🚀 [수정] DB 장르 원본(tmdb_genre, imdb_genre)을 직접 출력합니다! -->
+                                        <div class="col credit-col" data-genre="{{ movie.tmdb_genre|default:'' }} {{ movie.imdb_genre|default:'' }}">
+                                            <div style="z-index: 2; position: relative;">
+                                                {% include 'partials/comp_movie_card.html' with movie=movie card_prefix='a-m-' current_type='movie' %}
+                                            </div>
+                                            <div class="person-role-tag text-warning-emphasis" title="역할 : {{ movie.character_name|default:'정보 없음' }}">
+                                                {% if movie.character_name %}역할 : {{ movie.character_name }}{% else %}&nbsp;{% endif %}
+                                            </div>
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                                {% endif %}
+
+                                <!-- 2. 시리즈 출연작 -->
+                                {% if acted_tv %}
+                                <div class="credit-section mb-5 px-2">
+                                    <h5 class="fw-bold mb-3"><i class="bi bi-tv text-success me-2"></i>시리즈 출연작 <span class="badge bg-secondary rounded-pill ms-1 section-count" style="font-size: 11px;">{{ acted_tv|length }}</span></h5>
+                                    <div class="row row-cols-3 row-cols-md-4 row-cols-lg-5 g-2">
+                                        {% for tv in acted_tv %}
+                                        <div class="col credit-col" data-genre="{{ tv.tmdb_genre|default:'' }} {{ tv.imdb_genre|default:'' }}">
+                                            <div style="z-index: 2; position: relative;">
+                                                {% include 'partials/comp_movie_card.html' with movie=tv card_prefix='a-t-' current_type='tv' %}
+                                            </div>
+                                            <div class="person-role-tag text-warning-emphasis" title="역할 : {{ tv.character_name|default:'정보 없음' }}">
+                                                {% if tv.character_name %}역할 : {{ tv.character_name }}{% else %}&nbsp;{% endif %}
+                                            </div>
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                                {% endif %}
+                            </div>
+
+                            <!-- 🎬 [제작 덩어리] 연출 및 각본 그룹 -->
+                            <div class="credit-group" data-group="Production">
+                                <!-- 1. 영화 연출 -->
+                                {% if directed_movies %}
+                                <div class="credit-section mb-5 px-2">
+                                    <h5 class="fw-bold mb-3"><i class="bi bi-megaphone-fill text-danger me-2"></i>영화 연출 <span class="badge bg-secondary rounded-pill ms-1 section-count" style="font-size: 11px;">{{ directed_movies|length }}</span></h5>
+                                    <div class="row row-cols-3 row-cols-md-4 row-cols-lg-5 g-2">
+                                        {% for movie in directed_movies %}
+                                        <div class="col credit-col" data-genre="{{ movie.tmdb_genre|default:'' }} {{ movie.imdb_genre|default:'' }}">
+                                            <div style="z-index: 2; position: relative;">
+                                                {% include 'partials/comp_movie_card.html' with movie=movie card_prefix='d-m-' current_type='movie' %}
+                                            </div>
+                                            <div class="person-role-tag text-warning-emphasis">감독</div>
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                                {% endif %}
+
+                                <!-- 2. 영화 각본 -->
+                                {% if written_movies %}
+                                <div class="credit-section mb-5 px-2">
+                                    <h5 class="fw-bold mb-3"><i class="bi bi-pencil-fill text-warning me-2"></i>영화 각본 <span class="badge bg-secondary rounded-pill ms-1 section-count" style="font-size: 11px;">{{ written_movies|length }}</span></h5>
+                                    <div class="row row-cols-3 row-cols-md-4 row-cols-lg-5 g-2">
+                                        {% for movie in written_movies %}
+                                        <div class="col credit-col" data-genre="{{ movie.tmdb_genre|default:'' }} {{ movie.imdb_genre|default:'' }}">
+                                            <div style="z-index: 2; position: relative;">
+                                                {% include 'partials/comp_movie_card.html' with movie=movie card_prefix='w-m-' current_type='movie' %}
+                                            </div>
+                                            <div class="person-role-tag text-warning-emphasis">각본</div>
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                                {% endif %}
+
+                                <!-- 3. 시리즈 연출 -->
+                                {% if directed_tv %}
+                                <div class="credit-section mb-5 px-2">
+                                    <h5 class="fw-bold mb-3"><i class="bi bi-megaphone-fill text-danger me-2"></i>시리즈 연출 <span class="badge bg-secondary rounded-pill ms-1 section-count" style="font-size: 11px;">{{ directed_tv|length }}</span></h5>
+                                    <div class="row row-cols-3 row-cols-md-4 row-cols-lg-5 g-2">
+                                        {% for tv in directed_tv %}
+                                        <div class="col credit-col" data-genre="{{ tv.tmdb_genre|default:'' }} {{ tv.imdb_genre|default:'' }}">
+                                            <div style="z-index: 2; position: relative;">
+                                                {% include 'partials/comp_movie_card.html' with movie=tv card_prefix='d-t-' current_type='tv' %}
+                                            </div>
+                                            <div class="person-role-tag text-warning-emphasis">연출/감독</div>
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                                {% endif %}
+
+                                <!-- 4. 시리즈 각본 -->
+                                {% if written_tv %}
+                                <div class="credit-section mb-5 px-2">
+                                    <h5 class="fw-bold mb-3"><i class="bi bi-pencil-fill text-warning me-2"></i>시리즈 각본 <span class="badge bg-secondary rounded-pill ms-1 section-count" style="font-size: 11px;">{{ written_tv|length }}</span></h5>
+                                    <div class="row row-cols-3 row-cols-md-4 row-cols-lg-5 g-2">
+                                        {% for tv in written_tv %}
+                                        <div class="col credit-col" data-genre="{{ tv.tmdb_genre|default:'' }} {{ tv.imdb_genre|default:'' }}">
+                                            <div style="z-index: 2; position: relative;">
+                                                {% include 'partials/comp_movie_card.html' with movie=tv card_prefix='w-t-' current_type='tv' %}
+                                            </div>
+                                            <div class="person-role-tag text-warning-emphasis">각본</div>
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                                {% endif %}
+                            </div>
+
+                        </div>
+                        <!-- 스마트 정렬 컨테이너 끝 -->
+                        
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </main>
+
+    
+<!-- 하단 푸터 및 스크립트는 이전과 동일 -->
+{% include 'partials/layout_footer.html' %}
+
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- 🚀 [여기 1줄 추가!] 공통 상단 네비게이션 스크립트 (실시간 검색 기능) -->
+{% include 'partials/script_top_nav.html' %}
+
+<!-- 🚀 공통 기능 (공유, 별점, 찜하기, 번역 등) 스크립트 -->
+{% include 'partials/script_common.html' %}
+
+<!-- 💡 공통 로딩 오버레이 & 페이지 이동 딜레이 -->
+{% include 'partials/layout_loading_overlay.html' %}
+
+
+
+
+    <script>
+/* ================= [인물 상세 페이지 전용 로직] ================= */
+	// 🚀 약력 접기/펼치기 토글 함수
+        window.toggleBio = function() {
+            const bioText = document.getElementById('bio-text');
+            const toggleBtn = document.getElementById('bio-toggle-btn');
+            if (bioText.classList.contains('bio-collapsed')) {
+                bioText.classList.remove('bio-collapsed');
+                toggleBtn.innerHTML = '- 접기';
+            } else {
+                bioText.classList.add('bio-collapsed');
+                toggleBtn.innerHTML = '+ 더보기';
+            }
+        };
+
+        // 💡 페이지가 로드되면 약력이 5줄을 초과하는지 계산해서 버튼 띄우기
+        document.addEventListener("DOMContentLoaded", function() {
+            const bioText = document.getElementById('bio-text');
+            const bioBtn = document.getElementById('bio-toggle-btn');
+            
+            if (bioText && bioBtn) {
+                if (bioText.scrollHeight > bioText.clientHeight) {
+                    bioBtn.style.display = 'inline-block';
+                }
+            }
+
+            // 🚀 [복구 완료] 잃어버렸던 인물 필모그래피 번역기 스위치 온!
+            if (typeof triggerLazyTranslationForVisibleMovies === 'function') {
+                setTimeout(triggerLazyTranslationForVisibleMovies, 100);
+            }
+
+            // 🚀 [핵심 추가] 숨어있던 무비 카드의 평가수를 예쁘게 포맷팅(K, M)해서 화면에 찍어줍니다!
+            if (typeof formatVoteCount === 'function') {
+                document.querySelectorAll('.vote-count-badge').forEach((badge) => {
+                    const v = badge.getAttribute('data-votes');
+                    if (v && parseInt(v) > 0) badge.textContent = formatVoteCount(v);
+                    else badge.style.display = 'none'; // 평가수가 0이면 아예 뱃지를 숨겨서 깔끔하게!
+                });
+            }
+        });
+
+	// 🚀 [마스터 통합본] 인물 상세 페이지 '다큐 필터링' & '덩어리 스마트 정렬'
+        document.addEventListener("DOMContentLoaded", function() {
+            const container = document.getElementById('smart-credits-container');
+            if (!container) return;
+
+            const knownDept = container.getAttribute('data-known-dept');
+            const groups = Array.from(container.querySelectorAll('.credit-group'));
+            const docCheckboxes = document.querySelectorAll('.doc-filter-cb');
+
+            // 💡 1. 덩어리 재정렬 및 빈 공간 숨김 처리 함수
+            function applySmartSorting() {
+                groups.forEach(group => {
+                    let totalCount = 0;
+                    // 화면에 보이는(숨겨지지 않은) 섹션의 뱃지 숫자만 합산
+                    group.querySelectorAll('.credit-section').forEach(section => {
+                        if (section.style.display !== 'none') {
+                            const badge = section.querySelector('.section-count');
+                            if (badge) {
+                                const count = parseInt(badge.textContent.replace(/[^0-9]/g, ''), 10);
+                                if (!isNaN(count)) totalCount += count;
+                            }
+                        }
+                    });
+                    group.setAttribute('data-total-count', totalCount);
+                });
+
+                groups.sort((a, b) => {
+                    const groupA = a.getAttribute('data-group');
+                    const groupB = b.getAttribute('data-group');
+                    const countA = parseInt(a.getAttribute('data-total-count'), 10);
+                    const countB = parseInt(b.getAttribute('data-total-count'), 10);
+
+                    // 1순위: 주 직업군(Acting vs Production) 매칭 우선
+                    let isKnownA = 0, isKnownB = 0;
+                    if (knownDept === 'Acting' && groupA === 'Acting') isKnownA = 1;
+                    if (knownDept === 'Acting' && groupB === 'Acting') isKnownB = 1;
+                    if ((knownDept === 'Directing' || knownDept === 'Writing') && groupA === 'Production') isKnownA = 1;
+                    if ((knownDept === 'Directing' || knownDept === 'Writing') && groupB === 'Production') isKnownB = 1;
+
+                    if (isKnownA !== isKnownB) return isKnownB - isKnownA;
+                    // 2순위: 개수가 많은 덩어리 우선
+                    return countB - countA;
+                });
+
+                groups.forEach(group => {
+                    if (parseInt(group.getAttribute('data-total-count'), 10) > 0) {
+                        container.appendChild(group);
+                        group.style.display = 'block';
+                    } else {
+                        group.style.display = 'none'; // 안에 내용이 없으면 덩어리째 숨김
+                    }
+                });
+            }
+
+            // 💡 2. 다큐멘터리 즉각 필터링 함수
+            function filterDocumentaries(isExcludeDocs) {
+                // 모바일/PC 스위치 상태 즉시 동기화
+                docCheckboxes.forEach(cb => cb.checked = isExcludeDocs);
+
+                const sections = document.querySelectorAll('.credit-section');
+                
+                sections.forEach(section => {
+                    const cols = section.querySelectorAll('.credit-col');
+                    let visibleCount = 0;
+
+                    cols.forEach(col => {
+                        // 🚀 [수정] 대소문자 구별 없이 영문/한글 다큐멘터리를 싹 다 잡아냄
+                        const genre = (col.getAttribute('data-genre') || '').toLowerCase();
+                        
+                        if (isExcludeDocs && (genre.includes('다큐') || genre.includes('documentary'))) {
+                            col.style.display = 'none';
+                        } else {
+                            col.style.display = ''; // 원래 상태로 스르륵 복구
+                            visibleCount++;
+                        }
+                    });
+
+                    // 살아남은 카드 숫자로 뱃지 갱신
+                    const badge = section.querySelector('.section-count');
+                    if (badge) badge.textContent = visibleCount;
+
+                    // 해당 카테고리(예: 영화 각본)에 카드가 하나도 안 남았으면 카테고리 자체를 닫음
+                    if (visibleCount === 0) section.style.display = 'none';
+                    else section.style.display = 'block';
+                });
+
+                // 필터링이 끝났으니, 바뀐 숫자를 토대로 덩어리 재정렬 실시!
+                applySmartSorting();
+            }
+
+            // 💡 3. 체크박스 클릭 이벤트 리스너 등록
+            docCheckboxes.forEach(cb => {
+                cb.addEventListener('change', function() {
+                    filterDocumentaries(this.checked);
+                });
+            });
+
+            // 💡 4. 초기 로딩 시 무조건 '다큐 제외' 필터 작동 (디폴트 체크 상태)
+            if (docCheckboxes.length > 0) {
+                filterDocumentaries(docCheckboxes[0].checked);
+            } else {
+                applySmartSorting();
+            }
+        });
+
+    </script>
+</body>
+</html>

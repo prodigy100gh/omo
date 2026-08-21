@@ -1,0 +1,463 @@
+<!-- ================= templates/movie/all_list.html (전체DB 화면) ================= -->
+
+{% load humanize %}
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <!-- ================= [SECTION 1: 파비콘 및 기본 메타 설정] ================= -->
+    <!-- 💡 브라우저 상단 탭에 표시될 아이콘과 페이지 제목을 설정합니다. -->
+    <link class="movie-favicon" rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎬</text></svg>">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OMO - 전체 콘텐츠 목록</title>
+    
+    <!-- 부트스트랩 5 및 아이콘 라이브러리 불러오기 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    
+    <style>
+        /* ================= [SECTION 2: 전역 레이아웃 및 화면 스크롤 설정] ================= */
+        /* 💡 화면 전체는 고정(overflow: hidden)시키고, 영화 목록이 들어있는 본문(.scrollable-content)만 독립적으로 스크롤되도록 설정합니다. */
+        body { font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, sans-serif; background-color: #f8fafc; color: #0f172a; height: 100vh; height: 100dvh; overflow: hidden; display: flex; flex-direction: column; letter-spacing: -0.02em; transition: opacity 0.15s ease-in-out; }
+        
+        /* 💡 뒤로 가기나 페이지 이동 시 화면이 부드럽게 페이드아웃 되며 터치를 방지하는 효과 */
+        body.page-transitioning { opacity: 0.5; pointer-events: none; }
+        
+        /* 상단 고정 헤더 및 하단 푸터 바 */
+        .fixed-header { flex-shrink: 0; background: #ffffff; z-index: 1020; border-bottom: 1px solid #f1f5f9; padding-top: 0.5rem !important; padding-bottom: 6px !important; }
+        .scrollable-content { flex-grow: 1; overflow-y: scroll; -webkit-overflow-scrolling: touch; padding-bottom: 45px; }
+        .fixed-footer-flex { flex-shrink: 0; display: flex; justify-content: center; align-items: center; position: relative; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(8px); z-index: 1020; border-top: 1px solid #f1f5f9; padding: 0 1rem !important; height: 36px; }
+        
+        /* ================= [SECTION 3: 상단 필터 및 정렬 드롭다운 UI 스타일] ================= */
+        /* 💡 OTT, 장르, 연령, 국가 등 드롭다운 메뉴 안쪽의 그리드 배치와 체크박스 디자인입니다. */
+        .form-check-input { border: 1.5px solid #cbd5e1; cursor: pointer; transition: all 0.2s ease; }
+        .form-check-input:checked { background-color: #334155; border-color: #334155; }
+        
+        .filter-dropdown-wrapper { position: relative; width: 76px; flex-shrink: 0; }
+        .filter-dropdown-button { width: 100%; display: inline-flex !important; align-items: center !important; justify-content: space-between !important; white-space: nowrap; border: 1px solid #e2e8f0 !important; background-color: #ffffff !important; color: #334155 !important; transition: all 0.2s ease; height: 28px !important; padding: 0 4px !important; font-size: 11.5px !important; line-height: normal !important; margin: 0 !important; }
+        .filter-dropdown-button:hover { border-color: #cbd5e1 !important; background-color: #f8fafc !important; }
+        
+        .filter-dropdown-menu, .ott-dropdown-menu { max-height: none !important; overflow-y: visible !important; padding: 12px !important; border: 1px solid #e2e8f0; border-radius: 12px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.05); }
+        .filter-dropdown-menu { min-width: 350px !important; max-width: calc(100vw - 32px) !important; }
+        .ott-dropdown-menu { min-width: 220px !important; max-width: calc(100vw - 32px) !important; }
+        
+        /* 장르/국가는 3열, OTT는 2열 그리드로 깔끔하게 정렬 */
+        .filter-grid-container { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px 8px; max-height: 350px; overflow-y: auto; overflow-x: hidden; padding-right: 4px; }
+        .ott-grid-container { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px 8px; max-height: 350px; overflow-y: auto; overflow-x: hidden; padding-right: 4px; }
+        
+        /* 드롭다운 내부 스크롤바 커스텀 */
+        .filter-grid-container::-webkit-scrollbar, .ott-grid-container::-webkit-scrollbar { width: 6px; }
+        .filter-grid-container::-webkit-scrollbar-thumb, .ott-grid-container::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 4px; }
+        
+        .filter-item { position: relative !important; padding: 4px 6px 4px 24px !important; border-radius: 6px; transition: background-color 0.15s ease; display: flex; align-items: center; margin-left: 0 !important; }
+        .filter-item:hover { background-color: #f1f5f9; }
+        .filter-cb { position: absolute !important; left: 6px !important; top: 50% !important; transform: translateY(-50%) !important; width: 14px !important; height: 14px !important; margin: 0 !important; flex-shrink: 0; }
+        .filter-label-text { font-size: 12px; color: #334155; cursor: pointer; user-select: none; line-height: 1.2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-left: 0 !important; display: flex; align-items: center; }
+        
+        /* 정렬 버튼(IMDb평점, 내평점, 평가수) 액티브 효과 */
+        .sort-btn { display: inline-flex !important; align-items: center !important; justify-content: center !important; height: 28px !important; padding: 0 !important; line-height: normal !important; margin: 0 !important; white-space: nowrap !important; }
+        .sort-btn.active { background-color: #1e293b !important; color: #ffffff !important; border-color: #1e293b !important; font-weight: 700; }
+       
+        /* ================= [SECTION 4: 상단 콘텐츠 탭 및 모바일 반응형 설정] ================= */
+        /* 💡 [🎬 영화] vs [📺 시리즈] 스위칭 탭 바 버튼 스타일 */
+        .content-tab-btn { border-radius: 20px; font-size: 13.5px; padding: 5px 16px; border: 1px solid #cbd5e1; transition: all 0.2s ease; color: #475569; background-color: #ffffff; text-decoration: none; display: inline-flex; align-items: center; }
+        .content-tab-btn.active { background-color: #0f172a !important; color: #ffffff !important; border-color: #0f172a !important; font-weight: 700; }
+        
+        /* 스마트폰 화면(576px 이하)에서 깨짐 없이 100% 밀착되도록 보정 */
+        @media (max-width: 576px) {
+            .mobile-logo-text { font-size: 1.1rem !important; letter-spacing: -1px !important; }
+            .mobile-search-input { width: 75px !important; font-size: 12px !important; }
+            .mobile-head-btn { padding-left: 6px !important; padding-right: 6px !important; font-size: 12px !important; }
+            .mobile-head-btn.btn-outline-danger { padding-left: 4px !important; padding-right: 4px !important; }
+            .mobile-form-gap { gap: 4px !important; }
+            .rating-badge-container { gap: 2px !important; }
+            .filter-dropdown-wrapper { width: 68px !important; }
+            .filter-dropdown-button { font-size: 10.5px !important; padding: 0 2px !important; letter-spacing: -0.5px; }
+            .star-rating { top: 0 !important; }
+            .content-tab-btn { font-size: 12.5px !important; padding: 4px 12px !important; }
+        }
+    </style>
+
+        <!-- ================= [SECTION 5: 영화/시리즈 카드 및 포스터 영역] ================= -->
+        <!-- ================= [SECTION 6: 별점 평가 바 및 오버레이 아이콘 버튼] ================= -->
+	<!-- 💡 영화 카드 공통 CSS 불러오기 -->
+	{% include 'partials/comp_movie_card_style.html' %}
+
+</head>
+<body>
+
+<!-- ================= [SECTION 7: 상단 고정 헤더 (로고, 검색폼, 필터/정렬 드롭다운)] ================= -->
+<header class="fixed-header shadow-sm">
+    <div class="container px-2 px-sm-3">
+
+	<!-- 🚀 1번째 줄: 공용 상단 네비게이션 (검색, 지능형 메뉴 버튼) -->
+        {% include 'partials/layout_top_nav.html' %}
+
+        <!-- 2번째 줄: 3대 정렬 버튼(IMDb, 내평점, 평가수) & 4대 드롭다운(OTT, 장르, 연령, 국가) -->
+        <div class="d-flex flex-row justify-content-between align-items-center gap-1 flex-wrap flex-sm-nowrap" style="padding-top: 6px;">
+            <!-- 💡 [수정됨] 3대 정렬 버튼 (모든 필터 파라미터 완벽 유지) -->
+            <div class="d-flex gap-1 flex-shrink-0 flex-nowrap align-items-center">
+                {% if sort_by == 'imdb_desc' %}
+                    <a href="?type={{ current_type }}&sort=imdb_asc{% if search_query %}&search={{ search_query }}{% endif %}{% for g in selected_genres %}&genres={{ g }}{% endfor %}{% for o in selected_otts %}&otts={{ o }}{% endfor %}{% for r in selected_ratings %}&ratings={{ r }}{% endfor %}{% for c in selected_countries %}&countries={{ c }}{% endfor %}{% if exclude_doc %}&exclude_doc=on{% endif %}{% if exclude_no_rating %}&exclude_no_rating=on{% endif %}{% if exclude_low_votes %}&exclude_low_votes=on{% endif %}{% if exclude_short %}&exclude_short=on{% endif %}{% if exclude_low_rating %}&exclude_low_rating=on{% endif %}{% if exclude_rated %}&exclude_rated=on{% endif %}{% if exclude_unreleased %}&exclude_unreleased=on{% endif %}{% if exclude_no_imdb %}&exclude_no_imdb=on{% endif %}&filter_submitted=true" class="btn btn-sm text-secondary bg-white border sort-btn active" style="width: 105px !important; border-radius: 6px; font-size: 12px; border-color: #e2e8f0 !important;">🎬 IMDb평점 ▲</a>
+                {% elif sort_by == 'imdb_asc' %}
+                    <a href="?type={{ current_type }}{% if search_query %}&search={{ search_query }}{% endif %}{% for g in selected_genres %}&genres={{ g }}{% endfor %}{% for o in selected_otts %}&otts={{ o }}{% endfor %}{% for r in selected_ratings %}&ratings={{ r }}{% endfor %}{% for c in selected_countries %}&countries={{ c }}{% endfor %}{% if exclude_doc %}&exclude_doc=on{% endif %}{% if exclude_no_rating %}&exclude_no_rating=on{% endif %}{% if exclude_low_votes %}&exclude_low_votes=on{% endif %}{% if exclude_short %}&exclude_short=on{% endif %}{% if exclude_low_rating %}&exclude_low_rating=on{% endif %}{% if exclude_rated %}&exclude_rated=on{% endif %}{% if exclude_unreleased %}&exclude_unreleased=on{% endif %}{% if exclude_no_imdb %}&exclude_no_imdb=on{% endif %}&filter_submitted=true" class="btn btn-sm text-secondary bg-white border sort-btn active" style="width: 105px !important; border-radius: 6px; font-size: 12px; border-color: #e2e8f0 !important;">🎬 IMDb평점 ▼</a>
+                {% else %} 
+                    <a href="?type={{ current_type }}&sort=imdb_desc{% if search_query %}&search={{ search_query }}{% endif %}{% for g in selected_genres %}&genres={{ g }}{% endfor %}{% for o in selected_otts %}&otts={{ o }}{% endfor %}{% for r in selected_ratings %}&ratings={{ r }}{% endfor %}{% for c in selected_countries %}&countries={{ c }}{% endfor %}{% if exclude_doc %}&exclude_doc=on{% endif %}{% if exclude_no_rating %}&exclude_no_rating=on{% endif %}{% if exclude_low_votes %}&exclude_low_votes=on{% endif %}{% if exclude_short %}&exclude_short=on{% endif %}{% if exclude_low_rating %}&exclude_low_rating=on{% endif %}{% if exclude_rated %}&exclude_rated=on{% endif %}{% if exclude_unreleased %}&exclude_unreleased=on{% endif %}{% if exclude_no_imdb %}&exclude_no_imdb=on{% endif %}&filter_submitted=true" class="btn btn-sm text-secondary bg-white border sort-btn" style="width: 105px !important; border-radius: 6px; font-size: 12px; border-color: #e2e8f0 !important;">🎬 IMDb평점 순</a>
+                {% endif %}
+
+                {% if sort_by == 'my_desc' %}
+                    <a href="?type={{ current_type }}&sort=my_asc{% if search_query %}&search={{ search_query }}{% endif %}{% for g in selected_genres %}&genres={{ g }}{% endfor %}{% for o in selected_otts %}&otts={{ o }}{% endfor %}{% for r in selected_ratings %}&ratings={{ r }}{% endfor %}{% for c in selected_countries %}&countries={{ c }}{% endfor %}{% if exclude_doc %}&exclude_doc=on{% endif %}{% if exclude_no_rating %}&exclude_no_rating=on{% endif %}{% if exclude_low_votes %}&exclude_low_votes=on{% endif %}{% if exclude_short %}&exclude_short=on{% endif %}{% if exclude_low_rating %}&exclude_low_rating=on{% endif %}{% if exclude_rated %}&exclude_rated=on{% endif %}{% if exclude_unreleased %}&exclude_unreleased=on{% endif %}{% if exclude_no_imdb %}&exclude_no_imdb=on{% endif %}&filter_submitted=true" class="btn btn-sm text-secondary bg-white border sort-btn active" style="width: 85px !important; border-radius: 6px; font-size: 12px; border-color: #e2e8f0 !important;">★ 내평점 ▲</a>
+                {% elif sort_by == 'my_asc' %}
+                    <a href="?type={{ current_type }}{% if search_query %}&search={{ search_query }}{% endif %}{% for g in selected_genres %}&genres={{ g }}{% endfor %}{% for o in selected_otts %}&otts={{ o }}{% endfor %}{% for r in selected_ratings %}&ratings={{ r }}{% endfor %}{% for c in selected_countries %}&countries={{ c }}{% endfor %}{% if exclude_doc %}&exclude_doc=on{% endif %}{% if exclude_no_rating %}&exclude_no_rating=on{% endif %}{% if exclude_low_votes %}&exclude_low_votes=on{% endif %}{% if exclude_short %}&exclude_short=on{% endif %}{% if exclude_low_rating %}&exclude_low_rating=on{% endif %}{% if exclude_rated %}&exclude_rated=on{% endif %}{% if exclude_unreleased %}&exclude_unreleased=on{% endif %}{% if exclude_no_imdb %}&exclude_no_imdb=on{% endif %}&filter_submitted=true" class="btn btn-sm text-secondary bg-white border sort-btn active" style="width: 85px !important; border-radius: 6px; font-size: 12px; border-color: #e2e8f0 !important;">★ 내평점 ▼</a>
+                {% else %}
+                    <a href="?type={{ current_type }}&sort=my_desc{% if search_query %}&search={{ search_query }}{% endif %}{% for g in selected_genres %}&genres={{ g }}{% endfor %}{% for o in selected_otts %}&otts={{ o }}{% endfor %}{% for r in selected_ratings %}&ratings={{ r }}{% endfor %}{% for c in selected_countries %}&countries={{ c }}{% endfor %}{% if exclude_doc %}&exclude_doc=on{% endif %}{% if exclude_no_rating %}&exclude_no_rating=on{% endif %}{% if exclude_low_votes %}&exclude_low_votes=on{% endif %}{% if exclude_short %}&exclude_short=on{% endif %}{% if exclude_low_rating %}&exclude_low_rating=on{% endif %}{% if exclude_rated %}&exclude_rated=on{% endif %}{% if exclude_unreleased %}&exclude_unreleased=on{% endif %}{% if exclude_no_imdb %}&exclude_no_imdb=on{% endif %}&filter_submitted=true" class="btn btn-sm text-secondary bg-white border sort-btn" style="width: 85px !important; border-radius: 6px; font-size: 12px; border-color: #e2e8f0 !important;">★ 내평점 순</a>
+                {% endif %}
+
+                {% if sort_by == 'votes_desc' or not sort_by or sort_by == '' %}
+                    <a href="?type={{ current_type }}&sort=votes_asc{% if search_query %}&search={{ search_query }}{% endif %}{% for g in selected_genres %}&genres={{ g }}{% endfor %}{% for o in selected_otts %}&otts={{ o }}{% endfor %}{% for r in selected_ratings %}&ratings={{ r }}{% endfor %}{% for c in selected_countries %}&countries={{ c }}{% endfor %}{% if exclude_doc %}&exclude_doc=on{% endif %}{% if exclude_no_rating %}&exclude_no_rating=on{% endif %}{% if exclude_low_votes %}&exclude_low_votes=on{% endif %}{% if exclude_short %}&exclude_short=on{% endif %}{% if exclude_low_rating %}&exclude_low_rating=on{% endif %}{% if exclude_rated %}&exclude_rated=on{% endif %}{% if exclude_unreleased %}&exclude_unreleased=on{% endif %}{% if exclude_no_imdb %}&exclude_no_imdb=on{% endif %}&filter_submitted=true" class="btn btn-sm text-secondary bg-white border sort-btn active" style="width: 85px !important; border-radius: 6px; font-size: 12px; border-color: #e2e8f0 !important;">📊 평가수 ▼</a>
+                {% elif sort_by == 'votes_asc' %}
+                    <a href="?type={{ current_type }}&sort=votes_desc{% if search_query %}&search={{ search_query }}{% endif %}{% for g in selected_genres %}&genres={{ g }}{% endfor %}{% for o in selected_otts %}&otts={{ o }}{% endfor %}{% for r in selected_ratings %}&ratings={{ r }}{% endfor %}{% for c in selected_countries %}&countries={{ c }}{% endfor %}{% if exclude_doc %}&exclude_doc=on{% endif %}{% if exclude_no_rating %}&exclude_no_rating=on{% endif %}{% if exclude_low_votes %}&exclude_low_votes=on{% endif %}{% if exclude_short %}&exclude_short=on{% endif %}{% if exclude_low_rating %}&exclude_low_rating=on{% endif %}{% if exclude_rated %}&exclude_rated=on{% endif %}{% if exclude_unreleased %}&exclude_unreleased=on{% endif %}{% if exclude_no_imdb %}&exclude_no_imdb=on{% endif %}&filter_submitted=true" class="btn btn-sm text-secondary bg-white border sort-btn active" style="width: 85px !important; border-radius: 6px; font-size: 12px; border-color: #e2e8f0 !important;">📊 평가수 ▲</a>
+                {% else %}
+                    <a href="?type={{ current_type }}&sort=votes_desc{% if search_query %}&search={{ search_query }}{% endif %}{% for g in selected_genres %}&genres={{ g }}{% endfor %}{% for o in selected_otts %}&otts={{ o }}{% endfor %}{% for r in selected_ratings %}&ratings={{ r }}{% endfor %}{% for c in selected_countries %}&countries={{ c }}{% endfor %}{% if exclude_doc %}&exclude_doc=on{% endif %}{% if exclude_no_rating %}&exclude_no_rating=on{% endif %}{% if exclude_low_votes %}&exclude_low_votes=on{% endif %}{% if exclude_short %}&exclude_short=on{% endif %}{% if exclude_low_rating %}&exclude_low_rating=on{% endif %}{% if exclude_rated %}&exclude_rated=on{% endif %}{% if exclude_unreleased %}&exclude_unreleased=on{% endif %}{% if exclude_no_imdb %}&exclude_no_imdb=on{% endif %}&filter_submitted=true" class="btn btn-sm text-secondary bg-white border sort-btn" style="width: 85px !important; border-radius: 6px; font-size: 12px; border-color: #e2e8f0 !important;">📊 평가수 순</a>
+                {% endif %}
+            </div>
+
+            <!-- ================= [필터 드롭다운 메뉴 (공통 조각)] ================= -->
+            {% include 'partials/comp_filter_menu.html' %}
+
+        </div>
+    </div>
+</header>
+
+<!-- ================= [SECTION 8: 독립 고정 영역 (영화 vs 시리즈 마스터 탭 바)] ================= -->
+<!-- 💡 헤더 바로 아래 고정되어 스크롤을 내려도 항상 탭 전환과 수량 확인이 가능합니다. -->
+<section class="flex-shrink-0 py-2" style="background-color: #f8fafc; border-bottom: 1px solid #e2e8f0; z-index: 1010;">
+    <div class="container d-flex align-items-center justify-content-between">
+        <ul class="nav nav-pills m-0 gap-2" id="contentTab">
+            <li class="nav-item">
+                <a href="?type=movie" class="nav-link fw-bold shadow-sm {% if current_type != 'tv' %}active{% endif %} content-tab-btn" data-type="movie">
+                    🎬 영화 <span class="badge {% if current_type != 'tv' %}bg-white text-dark{% else %}bg-secondary{% endif %} ms-1 rounded-pill shadow-sm" id="tab-count-movie">{{ movie_total_count|default:0|intcomma }}</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="?type=tv" class="nav-link fw-bold shadow-sm {% if current_type == 'tv' %}active{% endif %} content-tab-btn" data-type="tv">
+                    📺 시리즈 <span class="badge {% if current_type == 'tv' %}bg-white text-dark{% else %}bg-secondary{% endif %} ms-1 rounded-pill shadow-sm" id="tab-count-tv">{{ tv_total_count|default:0|intcomma }}</span>
+                </a>
+            </li>
+        </ul>
+        <span class="badge bg-light text-secondary border fw-medium flex-shrink-0" style="font-size: 11px;">
+            조회된 작품 <span id="current-total-count">{{ movies.paginator.count|default:0|intcomma }}</span> 편
+        </span>
+    </div>
+</section>
+
+<!-- ================= [SECTION 9: 메인 본문 (영화/시리즈 5열 반응형 그리드 & 무한스크롤)] ================= -->
+<main class="scrollable-content pt-2 py-4">
+    <div class="container">
+        
+        <!-- 💡 인물 검색 결과 영역 시작 -->
+        {% if search_query and people %}
+        <div class="mb-5 mt-4">
+            <h5 class="fw-bold mb-3 text-secondary">
+                <i class="bi bi-person-lines-fill me-2"></i>인물 검색 결과
+            </h5>
+            
+            <!-- 가로 스크롤이 가능한 컨테이너 -->
+            <div class="d-flex overflow-auto gap-4 pb-3" style="white-space: nowrap; scrollbar-width: thin;">
+                {% for person in people %}
+                <!-- 클릭 시 우리가 새로 만든 person_detail 뷰로 이동! -->
+                <a href="{% url 'person_detail' person.id %}" class="text-decoration-none text-center" style="width: 100px; display: inline-block;">
+                    <div class="rounded-circle overflow-hidden mb-2 mx-auto bg-dark shadow-sm" style="width: 80px; height: 80px; border: 2px solid #eee;">
+                        {% if person.profile_url %}
+                            <img src="{{ person.profile_url }}" alt="{{ person.name }}" class="w-100 h-100" style="object-fit: cover;">
+                        {% else %}
+                            <i class="bi bi-person-fill text-white" style="font-size: 3rem; line-height: 80px;"></i>
+                        {% endif %}
+                    </div>
+                    <div class="text-dark fw-bold text-truncate" style="font-size: 0.9rem;">{{ person.name }}</div>
+                    <div class="text-muted small">{{ person.type }}</div>
+                </a>
+                {% endfor %}
+            </div>
+            
+            <hr class="my-4 text-muted">
+        </div>
+        {% endif %}
+        <!-- 💡 인물 검색 결과 영역 끝 -->
+
+        <!-- 💡 [통합 표기 완결] TV 시리즈도 영화와 100% 동일하게 연도·장르·국가가 모두 출력됩니다! -->
+        <div class="row row-cols-3 row-cols-sm-3 row-cols-md-4 row-cols-lg-5 g-1 mt-0" id="movie-grid-container" data-total-pages="{{ movies.paginator.num_pages|default:1 }}">
+	    {% for movie in movies %}
+	    <div class="col">
+	        {% include 'partials/comp_movie_card.html' with movie=movie %}
+	    </div>
+	    {% endfor %}
+	</div>
+        
+        <!-- 무한 스크롤 스피너 (마지막 페이지에 도달하면 JS에 의해 자동 삭제됨) -->
+        {% if movies.has_next %}
+        <div id="infinite-scroll-trigger" class="w-100 py-5 mt-3 text-center">
+            <div class="spinner-grow text-secondary" style="width: 1.5rem; height: 1.5rem;" role="status"></div>
+            <p class="text-muted small mt-2 fw-semibold">목록을 더 불러오는 중입니다...</p>
+        </div>
+        {% endif %}
+
+        <!-- 조건에 맞는 결과 없음 안내 메시지 -->
+        {% if not movies %}
+        <div class="text-center py-5 text-muted">
+            <p>조건에 맞는 결과가 없습니다.</p>
+        </div>
+        {% endif %}
+    </div>
+</main>
+
+<!-- ================= [SECTION 10: 하단 고정 푸터] ================= -->
+{% include 'partials/layout_footer.html' %}
+
+<!-- 부트스트랩 스크립트 번들 -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- 🚀 1. 공통 상단 네비게이션(검색창, 필터 폼 제출) 스크립트 -->
+{% include 'partials/script_top_nav.html' %}
+
+<!-- 🚀 2. 공통 기능 (공유, 별점, 찜하기, 번역 등) 스크립트 -->
+{% include 'partials/script_common.html' %}
+
+<!-- ================= [SECTION 11: 전체DB 화면 전용 자바스크립트] ================= -->
+<script>
+  // 💡 1. 무한 스크롤(Infinite Scroll) 감지 및 다음 페이지 불러오기 로직
+  let currentPageNum = {{ movies.number|default:1 }};
+  let totalPages = {{ movies.paginator.num_pages|default:1 }};
+  let isFetching = false;
+  let trigger = document.getElementById('infinite-scroll-trigger');
+  const scrollBox = document.querySelector('.scrollable-content');
+
+  function setupScrollObserver() {
+    trigger = document.getElementById('infinite-scroll-trigger');
+    if (trigger && 'IntersectionObserver' in window && scrollBox) {
+      const observer = new IntersectionObserver(
+        (entries) => {
+          if (entries[0].isIntersecting && !isFetching && currentPageNum < totalPages) {
+            loadMoreMovies();
+          }
+        },
+        { root: scrollBox, rootMargin: '400px', threshold: 0.1 }
+      );
+      observer.observe(trigger);
+    }
+  }
+  setupScrollObserver();
+
+  if (scrollBox) {
+    scrollBox.addEventListener('scroll', () => {
+      if (!isFetching && currentPageNum < totalPages) {
+        if (scrollBox.scrollTop + scrollBox.clientHeight >= scrollBox.scrollHeight - 400) {
+          loadMoreMovies();
+        }
+      }
+    });
+  }
+
+  function loadMoreMovies() {
+    if (isFetching || currentPageNum >= totalPages) return;
+    isFetching = true;
+    currentPageNum++;
+
+    const form = document.getElementById('search-form');
+    const formData = new FormData(form);
+    const params = new URLSearchParams(formData);
+    params.set('page', currentPageNum);
+    params.set('per_page', '15');
+    params.set('filter_submitted', 'true');
+    const url = window.location.pathname + '?' + params.toString();
+
+    fetch(url)
+      .then((res) => { if (!res.ok) throw new Error('HTTP ' + res.status); return res.text(); })
+      .then((html) => {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const newCards = doc.querySelectorAll('#movie-grid-container > .col');
+        const grid = document.getElementById('movie-grid-container');
+
+        newCards.forEach((card) => {
+          const innerCard = card.querySelector('.movie-card');
+          if (innerCard && document.getElementById(innerCard.id)) return;
+          grid.appendChild(card);
+          const badges = card.querySelectorAll('.vote-count-badge');
+          badges.forEach((b) => {
+            const v = b.getAttribute('data-votes');
+            // 💡 formatVoteCount는 script_common.html에서 빌려다 씁니다!
+            if (v && parseInt(v) > 0) b.textContent = formatVoteCount(v);
+            else b.style.display = 'none';
+          });
+        });
+
+        // 💡 번역기는 script_common.html에서 빌려다 씁니다!
+        if (typeof triggerLazyTranslationForVisibleMovies === 'function')
+          setTimeout(triggerLazyTranslationForVisibleMovies, 100);
+          
+        isFetching = false;
+        
+        if (currentPageNum >= totalPages && trigger) {
+          trigger.remove();
+          trigger = null;
+        }
+      })
+      .catch((err) => { 
+          console.error('무한 스크롤 에러:', err); 
+          isFetching = false; 
+          if (trigger) { trigger.innerHTML = '<span class="text-danger small fw-bold">데이터를 불러오지 못했습니다.</span>'; trigger = null; }
+      });
+  }
+
+  // 💡 2. 하이브리드 AJAX 영화/시리즈 마스터 탭 스위칭
+  document.querySelectorAll('.content-tab-btn').forEach((btn) => {
+    btn.addEventListener('click', function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      document.body.classList.remove('page-transitioning');
+
+      const targetType = this.getAttribute('data-type');
+      const urlParams = new URLSearchParams(window.location.search);
+      urlParams.set('type', targetType);
+      urlParams.set('page', '1');
+      const newUrl = window.location.pathname + '?' + urlParams.toString();
+      history.pushState({ type: targetType }, '', newUrl);
+
+      document.querySelectorAll('.content-tab-btn').forEach((b) => {
+        b.classList.remove('active');
+        const badge = b.querySelector('.badge');
+        if (badge) { badge.classList.remove('bg-white', 'text-dark'); badge.classList.add('bg-secondary'); }
+      });
+      this.classList.add('active');
+      const activeBadge = this.querySelector('.badge');
+      if (activeBadge) { activeBadge.classList.remove('bg-secondary'); activeBadge.classList.add('bg-white', 'text-dark'); }
+
+      const hiddenType = document.getElementById('hidden-type-val');
+      if (hiddenType) hiddenType.value = targetType;
+      const filterType = document.getElementById('filter-form-type-val');
+      if (filterType) filterType.value = targetType;
+
+      const grid = document.getElementById('movie-grid-container');
+      if (grid) { grid.style.opacity = '0.3'; grid.style.pointerEvents = 'none'; }
+
+      fetch(newUrl)
+        .then((res) => { if (!res.ok) throw new Error('HTTP ' + res.status); return res.text(); })
+        .then((html) => {
+          document.body.classList.remove('page-transitioning');
+          const parser = new DOMParser();
+          const doc = parser.parseFromString(html, 'text/html');
+
+          const newGrid = doc.getElementById('movie-grid-container');
+          if (newGrid && grid) {
+            grid.innerHTML = newGrid.innerHTML;
+            const newTotal = newGrid.getAttribute('data-total-pages');
+            if (newTotal) totalPages = parseInt(newTotal, 10);
+          }
+
+          const newCountEl = doc.getElementById('current-total-count'),
+            currentCountEl = document.getElementById('current-total-count');
+          if (newCountEl && currentCountEl)
+            currentCountEl.textContent = newCountEl.textContent;
+
+          if (grid) { grid.style.opacity = '1'; grid.style.pointerEvents = 'auto'; }
+
+          currentPageNum = 1;
+          const newTrigger = doc.getElementById('infinite-scroll-trigger');
+          if (trigger) trigger.remove();
+          if (newTrigger && grid) {
+            grid.parentNode.insertBefore(newTrigger, grid.nextSibling);
+          }
+          setupScrollObserver();
+
+          document.querySelectorAll('.vote-count-badge').forEach((badge) =>
+            (badge.textContent = formatVoteCount(badge.getAttribute('data-votes')))
+          );
+          if (typeof triggerLazyTranslationForVisibleMovies === 'function')
+            setTimeout(triggerLazyTranslationForVisibleMovies, 50);
+        })
+        .catch((err) => {
+          console.error('AJAX 탭 전환 에러! 새로고침으로 이동합니다:', err);
+          document.body.classList.remove('page-transitioning');
+          window.location.href = newUrl;
+        });
+    });
+  });
+
+  window.addEventListener('popstate', function () {
+    window.location.reload();
+  });
+
+  // 💡 3. 페이지 초기화: 투표수 렌더링 및 4대 필터 뱃지 숫자 갱신
+  document.addEventListener('DOMContentLoaded', function () {
+    
+    // 포맷팅 함수 실행
+    document.querySelectorAll('.vote-count-badge').forEach((badge) =>
+      (badge.textContent = formatVoteCount(badge.getAttribute('data-votes')))
+    );
+
+    // 필터 드롭다운 뱃지 컨트롤 로직
+    function initBadge(badgeId, clearBtnId, count) {
+      const badge = document.getElementById(badgeId), clearBtn = document.getElementById(clearBtnId);
+      if (badge) {
+        if (count > 0) { badge.textContent = count; badge.classList.remove('d-none'); }
+        else { badge.classList.add('d-none'); }
+      }
+      if (clearBtn) { clearBtn.disabled = count === 0; }
+    }
+
+    const updateExcludeBadge = () => {
+      const cbIds = ['excludeDocCheck', 'excludeNoRatingCheck', 'excludeLowVotesCheck', 'excludeShortCheck', 'excludeLowRatingCheck', 'excludeRatedCheck', 'excludeUnreleasedCheck', 'excludeNoImdbCheck'];
+      let count = 0;
+      cbIds.forEach((id) => { const cb = document.getElementById(id); if (cb && cb.checked) count++; });
+      initBadge('exclude-badge', 'btn-clear-exclude', count);
+    };
+
+    const setupFilterBadge = (nameStr, badgeId, btnId) => {
+      const updateFn = () => {
+        const count = document.querySelectorAll(`#filter-form input[name="${nameStr}"]:checked`).length;
+        initBadge(badgeId, btnId, count);
+      };
+      updateFn();
+      document.querySelectorAll(`#filter-form input[name="${nameStr}"]`).forEach((cb) => cb.addEventListener('change', updateFn));
+      const clearBtn = document.getElementById(btnId);
+      if (clearBtn)
+        clearBtn.addEventListener('click', () => {
+          document.querySelectorAll(`#filter-form input[name="${nameStr}"]`).forEach((cb) => (cb.checked = false));
+          updateFn();
+          document.getElementById('filter-form').submit();
+        });
+    };
+
+    setupFilterBadge('genres', 'genre-badge', 'btn-clear-genre');
+    setupFilterBadge('otts', 'ott-badge', 'btn-clear-ott');
+    setupFilterBadge('ratings', 'rating-badge', 'btn-clear-rating');
+    setupFilterBadge('countries', 'country-badge', 'btn-clear-country');
+    
+    updateExcludeBadge();
+    ['excludeDocCheck', 'excludeNoRatingCheck', 'excludeLowVotesCheck', 'excludeShortCheck', 'excludeLowRatingCheck', 'excludeRatedCheck', 'excludeUnreleasedCheck', 'excludeNoImdbCheck'].forEach((id) => {
+      const cb = document.getElementById(id);
+      if (cb) cb.addEventListener('change', updateExcludeBadge);
+    });
+
+    const btnClearExclude = document.getElementById('btn-clear-exclude');
+    if (btnClearExclude)
+      btnClearExclude.addEventListener('click', function () {
+        ['excludeDocCheck', 'excludeNoRatingCheck', 'excludeLowVotesCheck', 'excludeShortCheck', 'excludeLowRatingCheck', 'excludeRatedCheck', 'excludeUnreleasedCheck', 'excludeNoImdbCheck'].forEach((id) => { const cb = document.getElementById(id); if (cb) cb.checked = false; });
+        updateExcludeBadge();
+        document.getElementById('filter-form').submit();
+      });
+
+    // 지연 번역 실행
+    if (typeof triggerLazyTranslationForVisibleMovies === 'function') {
+        setTimeout(triggerLazyTranslationForVisibleMovies, 100);
+    }
+  });
+
+</script>
+
+<!-- ================= [SECTION 12: 통합 로딩 오버레이 & 페이지 이동 효과] ================= -->
+{% include 'partials/layout_loading_overlay.html' %}
+
+</body>
+</html>

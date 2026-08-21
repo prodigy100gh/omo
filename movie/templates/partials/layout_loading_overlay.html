@@ -1,0 +1,75 @@
+<!-- ================= templates/partials/layout_loading_overlay.html (레이아웃 / 화면 로딩 효과) ================= -->
+
+<!-- ================= [통합 로딩 오버레이 & 0.15초 딜레이 이동 (부트스트랩 독립형 공통 파일)] ================= -->
+<style>
+  /* 1. 전체 배경 및 블러 (1px 투명 유리 효과) */
+  #global-loading-overlay {
+      position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+      background-color: rgba(248, 250, 252, 0.9); 
+      backdrop-filter: blur(0px); -webkit-backdrop-filter: blur(0px);
+      z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center;
+      opacity: 0; visibility: hidden; transition: opacity 0.15s ease-in-out, visibility 0.15s ease-in-out;
+      font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  }
+  #global-loading-overlay.active { opacity: 1; visibility: visible; pointer-events: auto; }
+
+  /* 2. 대형 스피너 (부트스트랩 없이 100% 똑같이 강제로 그리는 순수 CSS) */
+  .omo-spinner-border {
+      display: inline-block; width: 4.5rem; height: 4.5rem; vertical-align: -0.125em;
+      border: 0.3em solid #212529; border-right-color: transparent; border-radius: 50%;
+      animation: 0.75s linear infinite omo-spinner-border; margin-bottom: 1.5rem;
+  }
+  @keyframes omo-spinner-border { to { transform: rotate(360deg); } }
+  
+  /* 숨겨야 할 Loading 글자를 강제로 숨김 */
+  .omo-visually-hidden { position: absolute !important; width: 1px !important; height: 1px !important; padding: 0 !important; margin: -1px !important; overflow: hidden !important; clip: rect(0, 0, 0, 0) !important; white-space: nowrap !important; border: 0 !important; }
+  
+  /* 3. 텍스트 스타일 (홈 화면과 100% 똑같은 크기와 굵기 강제 적용) */
+  .omo-loader-title { font-size: 1.5rem !important; font-weight: 700 !important; color: #212529 !important; margin: 0 !important; letter-spacing: -0.5px !important; }
+  .omo-loader-desc { font-size: 15px !important; font-weight: 600 !important; color: #6c757d !important; margin-top: 0.5rem !important; margin-bottom: 0 !important; }
+</style>
+
+<div id="global-loading-overlay">
+    <div class="omo-spinner-border" role="status">
+        <span class="omo-visually-hidden">Loading...</span>
+    </div>
+    <h4 class="omo-loader-title">로딩 중입니다</h4>
+    <p class="omo-loader-desc">OMO 콘텐츠를 불러오고 있어요 🎬</p>
+</div>
+
+<script>
+  function showGlobalLoading() { document.getElementById('global-loading-overlay')?.classList.add('active'); }
+  function hideGlobalLoading() { document.getElementById('global-loading-overlay')?.classList.remove('active'); }
+  window.addEventListener('pageshow', (e) => { if (e.persisted) hideGlobalLoading(); });
+
+  // [공통] 일반 링크 클릭 감지 (0.15초 딜레이 이동)
+  document.addEventListener('click', (e) => {
+    const link = e.target.closest('a');
+    if (!link) return;
+    const href = link.getAttribute('href');
+    if (!href || href.startsWith('#') || href.startsWith('javascript')) return;
+    if (link.target === '_blank' || e.ctrlKey || e.metaKey || e.shiftKey) return;
+    if (link.classList.contains('rec-scroll-btn') || link.classList.contains('nav-link') || link.classList.contains('content-tab-btn')) return; 
+
+    e.preventDefault(); 
+    showGlobalLoading(); 
+    setTimeout(() => { window.location.href = link.href; }, 150);
+  });
+
+  // [공통] 폼 전송 감지 (0.15초 딜레이 전송)
+  document.querySelectorAll('form').forEach(form => {
+      form.addEventListener('submit', (e) => {
+          if (!form.classList.contains('rating-async-form')) {
+              e.preventDefault();
+              showGlobalLoading();
+              setTimeout(() => { form.submit(); }, 150);
+          }
+      });
+  });
+
+  // [온보딩 전용] 버튼 클릭용 함수 (다른 페이지에 들어가도 충돌 없음)
+  function goToHomeWithLoading() {
+      showGlobalLoading();
+      setTimeout(() => { window.location.href = "/"; }, 150); 
+  }
+</script>

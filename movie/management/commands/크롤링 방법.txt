@@ -1,0 +1,16 @@
+💡 사용 방법 (아주 우아해졌습니다!)
+터미널에서 아래 명령어를 목적에 맞게 골라 사용하시면 됩니다.
+
+전체 통합 수집 (영화 + TV 모두)
+python manage.py crawl
+
+
+영화만 따로 수집하고 싶을 때
+python manage.py crawl --target movie
+
+
+TV 시리즈만 따로 수집하고 싶을 때
+python manage.py crawl --target tv
+
+DB를 싹 비우고 처음부터 깨끗하게 다시 수집하고 싶을 때 (강력 추천!)
+python manage.py crawl --clear

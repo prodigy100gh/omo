@@ -1,0 +1,394 @@
+<!-- ================= templates/movie/movie_detail.html (영화 상세 화면) ================= -->
+
+{% load humanize %}
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <link class="movie-favicon" rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎬</text></svg>">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OMO - {% if movie.translated_title and movie.translated_title != '힣 번역 불가' %}*{{ movie.translated_title }}{% else %}{{ movie.tmdb_title }}{% endif %}</title>
+    
+    <!-- 💡 [초보자 안내] 부트스트랩 등 화면을 예쁘게 꾸며주는 외부 디자인 파일을 불러옵니다. -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    
+    {% include 'partials/style_detail.html' %}
+
+</head>
+<body>
+
+
+<!-- ================= [SECTION 8: 상단 헤더 & 로그인 스위칭] ================= -->
+    <header class="fixed-header shadow-sm">
+        <div class="container px-2 px-sm-3">
+            {% include 'partials/layout_top_nav.html' %}
+        </div>
+    </header>
+
+
+    <!-- 💡 [초보자 안내] 본격적인 영화 상세 정보 내용이 출력되는 메인 바디 영역입니다. -->
+    <main class="scrollable-content py-3">
+        <div class="container mb-4" style="max-width: 960px;">
+            
+            <!-- ================= [카드 1: 포스터 및 기본 정보] ================= -->
+            <div class="detail-card">
+                <div class="d-flex flex-column flex-md-row align-items-md-stretch gap-4">
+                
+                <!-- 💡 [초보자 안내] 화면에 보여지는 실제 영화 포스터 이미지입니다. -->
+                <div class="flex-shrink-0 mx-auto mx-md-0" style="width: 220px; max-width: 100%;">
+                    {% if movie.tmdb_poster_url %}
+                        <img src="{{ movie.tmdb_poster_url }}" class="w-100 h-100 shadow-sm" style="border-radius: 12px; object-fit: cover; min-height: 310px; cursor: zoom-in;" alt="{{ movie.tmdb_title }}" onclick="openPosterModal()">
+                    {% else %}
+                        <div class="w-100 h-100 d-flex flex-column align-items-center justify-content-center text-muted bg-light border" style="border-radius: 12px; min-height: 310px;"><i class="bi bi-film fs-1 mb-2"></i><span class="small">No Image</span></div>
+                    {% endif %}
+                </div>
+                
+                <div class="d-flex flex-column justify-content-between flex-grow-1 min-w-0 py-1">
+                    <div>
+                        <!-- 💡 JS가 찾을 수 있게 id="movie-main-title" 추가 -->
+                        <h1 id="movie-main-title" class="fw-bold mb-0" style="font-size: 2rem; letter-spacing: -1px; line-height: 1.2;">
+                            {% if movie.translated_title and movie.translated_title != '힣 번역 불가' %}*{{ movie.translated_title }}{% else %}{{ movie.tmdb_title }}{% endif %}
+                        </h1>
+                        <!-- 💡 "힣 번역 불가"일 때는 (구글 번역 제목) 라벨 숨기기. -->
+                        <div id="movie-translated-label" class="text-sub mt-1 mb-1 fw-normal {% if not movie.translated_title or movie.translated_title == '힣 번역 불가' %}d-none{% endif %}" style="font-size: 0.8rem;">&#12288;(구글 번역 제목)</div>
+                        
+                        <!-- 💡 [원제 스마트 숨김] 한국 작품이면서 제목과 원제가 완벽히 일치하면 d-none으로 숨김 처리! -->
+                        <h5 class="text-sub mb-3 fw-normal mt-1 {% if '한국' in movie.tmdb_production_country_kr|default:'' and movie.tmdb_title == movie.tmdb_original_title %}d-none{% endif %}" style="font-size: 1.05rem;">원제 : {{ movie.tmdb_original_title }}</h5>
+                        
+                        <!-- 💡 [간격 자동 보정] 원제가 숨겨져서 공간이 증발해버릴 경우, mt-3(위쪽 여백)을 추가해 숨통을 트여줍니다! -->
+                        <div class="d-flex flex-wrap gap-2 text-sub fs-6 align-items-center mb-4 {% if '한국' in movie.tmdb_production_country_kr|default:'' and movie.tmdb_title == movie.tmdb_original_title %}mt-3{% endif %}">
+                            
+                            <!-- 🚀 [예정 뱃지] 무조건 TMDB 개봉일 기준 -->
+                            {% now "Y-m-d" as today_date %}
+                            {% if movie.tmdb_release_date|date:"Y-m-d" > today_date %}
+                                <span class="badge bg-danger text-white px-2 py-1.5 d-inline-flex align-items-center shadow-sm" style="font-size: 11px; border-radius: 6px; letter-spacing: 0; font-weight: 700;">예정</span>
+                            {% endif %}
+                            
+                            <!-- 💡 [TMDB 기본 및 한국 개봉일 YYYY-MM-DD 형식 통일] -->
+                            {% with base_d=movie.tmdb_release_date|date:"Y-m-d" kr_d=movie.tmdb_release_date_kr|date:"Y-m-d" %}
+                            <span class="badge bg-light text-dark border px-2.5 py-1.5 d-inline-flex align-items-center" style="font-size: 12px; font-weight: 500;">
+                                <i class="bi bi-calendar3 me-1"></i>{{ base_d|default:"----" }}
+                            </span>
+                            
+                            <!-- 🚀 [(한) K날짜 박스] TMDB 기준 한국 개봉일이 기본 개봉일과 다를 경우에만 우측에 추가 표기 -->
+                            {% if kr_d and base_d and kr_d != base_d %}
+                            <span class="badge bg-light text-dark border px-2.5 py-1.5 d-inline-flex align-items-center" style="font-size: 12px; font-weight: 500;">
+                                <span class="text-secondary fw-bold me-1">(한)</span>{{ kr_d }}
+                            </span>
+                            {% endif %}
+                            {% endwith %}
+
+                            <!-- 장르 / 국가 / 언어 박스 -->
+                            <span class="badge bg-light text-dark border px-2.5 py-1.5 d-inline-flex align-items-center" style="font-size: 12px; font-weight: 500;"><i class="bi bi-film me-1"></i>{% if movie.display_genre == '정보 없음' or not movie.display_genre %}장르 정보 없음{% else %}{{ movie.display_genre }}{% endif %}</span>
+                            <span class="badge bg-light text-dark border px-2.5 py-1.5 d-inline-flex align-items-center" style="font-size: 12px; font-weight: 500;"><i class="bi bi-globe me-1"></i>{{ movie.tmdb_production_country_kr|default:"국가 미상" }}</span>
+                            <span class="badge bg-light text-dark border px-2.5 py-1.5 d-inline-flex align-items-center" style="font-size: 12px; font-weight: 500;"><i class="bi bi-chat-left-text me-1"></i>{{ movie.display_language }}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-light p-3 rounded-3 border border-light-subtle mb-3">
+                        <div class="row g-3 style-spec-grid text-center text-sm-start" style="font-size: 13px;">
+                            <div class="col-6 col-sm-3 border-end border-2 border-white">
+                                <div class="text-sub small mb-1">상영 시간</div>
+                                <!-- 💡 [초보자 안내] 상영시간 Fallback 로직 적용 -->
+                                <div class="fw-bold text-dark">{% if movie.display_runtime > 0 %}{{ movie.display_runtime }}분{% else %}-{% endif %}</div>
+                            </div>
+                            <div class="col-6 col-sm-3 border-end border-2 border-white">
+                                <div class="text-sub small mb-1">관람 등급</div>
+                                <div>
+                                    {% with kr=movie.tmdb_certification_kr|default:'' us=movie.tmdb_certification_us|default:'' %}
+                                        {% if kr and kr != '정보 없음' and kr != '미등급' %}
+                                            {% if kr == 'ALL' or kr == 'All' or '전체' in kr %}<span class="badge badge-custom cert-ALL px-2 py-0.5">전체</span>
+                                            {% elif '12' in kr %}<span class="badge badge-custom cert-12 px-2 py-0.5">12세</span>
+                                            {% elif '15' in kr %}<span class="badge badge-custom cert-15 px-2 py-0.5">15세</span>
+                                            {% elif '18' in kr or '19' in kr or '청불' in kr %}<span class="badge badge-custom cert-19 px-2 py-0.5">19세</span>
+                                            {% else %}<span class="badge badge-custom cert-default px-2 py-0.5">{{ kr }}</span>{% endif %}
+                                        {% elif us and us != '정보 없음' and us != '미등급' and us != 'NR' and us != 'UR' and us != 'TBA' %}
+                                            {% if us == 'G' %}<span class="badge badge-custom cert-ALL px-2 py-0.5">전체</span>
+                                            {% elif us == 'PG' %}<span class="badge badge-custom cert-12 px-2 py-0.5">12세</span>
+                                            {% elif us == 'PG-13' %}<span class="badge badge-custom cert-15 px-2 py-0.5">15세</span>
+                                            {% elif us == 'R' or us == 'NC-17' %}<span class="badge badge-custom cert-19 px-2 py-0.5">19세</span>
+                                            {% else %}<span class="badge badge-custom cert-default px-2 py-0.5">{{ us }}</span>{% endif %}
+                                        {% else %}<span class="badge badge-custom cert-default px-2 py-0.5">정보 없음</span>{% endif %}
+                                    {% endwith %}
+                                </div>
+                            </div>
+                            <div class="col-6 col-sm-3 border-end border-2 border-white">
+                                <div class="text-sub small mb-1">제작 예산</div>
+                                <div class="fw-bold text-dark" id="budget-text">계산중...</div>
+                            </div>
+                            <div class="col-6 col-sm-3">
+                                <div class="text-sub small mb-1">흥행 수익</div>
+                                <div class="fw-bold text-success" id="revenue-text">계산중...</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 💡 [초보자 안내] 볼 수 있는 OTT 플랫폼을 보여주는 뱃지 아이콘 영역입니다. -->
+                    {% if movie.tmdb_streaming_providers %}
+                    <div>
+                        <div class="text-sub small fw-bold mb-2" style="font-size: 11.5px;"><i class="bi bi-play-circle-fill me-1 text-danger"></i>시청 가능 플랫폼 (OTT)</div>
+                        <div class="d-flex flex-wrap gap-2">
+                            {% for provider in movie.tmdb_streaming_providers %}
+                                {% with p_name=provider.provider_name %}
+                                <div class="ott-badge-item" title="{{ p_name }}">
+                                    {% if p_name|lower == 'watcha' %}<img src="/static/images/WATCHA_icon_Square.png" class="ott-logo-sm" alt="Watcha">
+                                    {% elif p_name|lower == 'wavve' %}<img src="/static/images/Wavve_icon.png" class="ott-logo-sm" alt="Wavve">
+                                    {% else %}<img src="{{ provider.logo_url }}" class="ott-logo-sm" alt="{{ p_name }}">{% endif %}
+                                    <span style="font-size: 11px; font-weight: 600; color: #475569;">
+                                        {% if p_name|lower == 'netflix' %}넷플릭스{% elif p_name|lower == 'netflix standard with ads' %}넷플릭스 광고형{% elif p_name|lower == 'watcha' %}왓챠{% elif p_name|lower == 'wavve' %}웨이브{% elif p_name|lower == 'tving' %}티빙{% elif p_name|lower == 'disney plus' or p_name|lower == 'disney+' %}디즈니+{% elif p_name|lower == 'apple tv plus' or p_name|lower == 'apple tv' %}애플 TV+{% elif p_name|lower == 'amazon prime video' %}아마존 프라임{% elif p_name|lower == 'coupang play' %}쿠팡플레이{% else %}{{ p_name }}{% endif %}
+                                    </span>
+                                </div>
+                                {% endwith %}
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+                </div>
+            </div>
+
+            <!-- ================= [카드 2: 평점 그라데이션 박스 (공통 조각)] ================= -->
+            {% include 'partials/comp_detail_rating_box.html' with item=movie %}
+
+            <!-- ================= [카드 3: 나의 감상평] ================= -->
+            <!-- 💡 [초보자 안내] 영화 감상평(리뷰)을 작성하고 저장/삭제하는 입력 창입니다. -->
+            <div class="detail-card">
+                <h5 class="fw-bold mb-2.5" style="font-size: 1.05rem;"><i class="bi bi-chat-left-heart-fill me-2 text-dark"></i>나의 감상평</h5>
+                <div class="d-flex flex-column gap-3">
+                    <textarea id="review-text-input" class="form-control review-textarea w-100 px-3 py-2.5" placeholder="이 영화에 대한 감상평을 자유롭게 기록해 보세요. (입력창을 누르면 넓게 열립니다)">{{ movie_review|default:'' }}</textarea>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="form-check form-switch m-0"><input class="form-check-input" type="checkbox" id="isPublicToggle" {% if my_is_public %}checked{% endif %}><label class="form-check-label text-muted" for="isPublicToggle" style="font-size: 14px;">전체 공개</label></div>
+                        <div class="d-flex gap-2">
+                            <button type="button" id="btn-delete-review" class="btn btn-outline-danger px-4 review-save-btn {% if not movie_review %}d-none{% endif %}">삭제</button>
+                            <button type="button" id="btn-save-review" class="btn btn-dark px-4 review-save-btn">저장</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ================= [카드 4: 커뮤니티 감상평] ================= -->
+            <div class="detail-card">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="fw-bold m-0" style="font-size: 1.05rem;"><i class="bi bi-people-fill me-2 text-dark"></i>커뮤니티 감상평</h5>
+                    
+                    <!-- 💡 [수정] 자바스크립트가 조종할 수 있게 ID를 부여하고, 3개 이하일 땐 d-none으로 숨겨둡니다! -->
+                    <a href="{% if is_tv %}{% url 'tv_reviews_all' series.id %}{% else %}{% url 'movie_reviews_all' movie.id %}{% endif %}" 
+                       id="more-reviews-btn" 
+                       class="text-decoration-none fw-bold {% if total_reviews_count <= 3 %}d-none{% endif %}" 
+                       style="font-size: 0.85rem; color: #0d6efd;">
+                        더보기 (<span id="more-reviews-count">{{ total_reviews_count }}</span>) <i class="bi bi-chevron-right"></i>
+                    </a>
+                </div>
+                <div class="review-scroll-container">
+                    {% for rating in public_reviews|slice:":3" %}
+
+                        <!-- 💡 조각 파일 호출 -->
+                        {% include 'partials/comp_detail_review_card.html' %}
+
+                    {% empty %}
+                        <div class="w-100 text-center text-muted py-4 rounded bg-light border" style="font-size: 0.9rem;">아직 작성된 공개 리뷰가 없습니다.<br>첫 번째 리뷰를 남겨보세요!</div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- ================= [카드 5: 시놉시스 (줄거리)] ================= -->
+            <!-- 🚀 [순서 개편] 시놉시스를 상단으로 끌어올렸습니다. -->
+            <div class="detail-card">
+                <h5 class="fw-bold mb-3" style="font-size: 1.05rem;"><i class="bi bi-text-left me-2 text-secondary"></i>시놉시스 (줄거리)</h5>
+                <p class="lh-lg text-dark mb-0" style="text-align: justify; font-size: 14.5px;">{{ movie.tmdb_overview|default:"공식 줄거리 정보가 등록되어 있지 않습니다." }}</p>
+            </div>
+
+            <!-- ================= [카드 6: 공식 예고편] ================= -->
+            <div class="detail-card {% if not movie.youtube_trailer_url and not movie.tmdb_trailer_url %}d-none{% endif %}" id="trailer-section">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="fw-bold m-0" style="font-size: 1.05rem;"><i class="bi bi-camera-reels-fill me-2 text-danger"></i>공식 예고편</h5>
+                    
+                    <!-- 💡 [신규] 예고편 오류 신고 UI -->
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="text-danger fw-bold" style="font-size: 13px;" id="trailer-report-count">{{ active_report_count|default:0 }}</span>
+                        <button type="button" class="btn btn-sm btn-outline-secondary d-flex align-items-center gap-1" id="btn-report-trailer" data-id="{{ movie.id }}" data-type="movie" {% if has_reported %}disabled{% endif %} style="font-size: 11px; padding: 2px 8px; border-radius: 6px;">
+                            <i class="bi bi-exclamation-triangle-fill"></i> <span id="trailer-report-text">{% if has_reported %}신고 완료{% else %}오류 신고{% endif %}</span>
+                        </button>
+                        <i class="bi bi-info-circle text-muted" data-bs-toggle="tooltip" data-bs-placement="top" title="재생되지 않거나 잘못된 예고편이 보이면 눌러주세요!" style="cursor: help; font-size: 14px;"></i>
+                    </div>
+                </div>
+                
+                <div class="video-container">
+                    <iframe id="trailer-iframe" src="" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+                </div>
+            </div>
+
+            <!-- ================= [카드 7: 유튜브 리뷰 (가로 스크롤)] ================= -->
+            <!-- 🚀 [순서/기능 개편] 추천작 위로 올리고, 데스크탑 화살표 및 가로 스크롤 적용 -->
+            <div class="detail-card">
+                <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                    <div class="d-flex align-items-center gap-3 flex-wrap">
+                        <h5 class="fw-bold m-0" style="font-size: 1.05rem;"><i class="bi bi-youtube text-danger me-2"></i>유튜브 리뷰 영상</h5>
+                        <div class="nav nav-pills" id="review-tabs">
+                            <button class="nav-link active btn-sm review-btn py-1 px-2" id="short-review-btn" onclick="showReviews('short')" style="font-size: 12px;">10분 이내</button>
+                            <button class="nav-link btn-sm review-btn py-1 px-2 ms-1" id="long-review-btn" onclick="showReviews('long')" style="font-size: 12px;">10분 초과</button>
+                        </div>
+                        <!-- 💡 [추가] 10분 버튼들 우측에 배치되는 회색 안내 문구 -->
+                        <span class="text-muted" style="font-size: 11.5px; letter-spacing: -0.5px;">※ 단순 검색으로 관계없는 영상이 나올 수 있습니다.</span>
+                    </div>
+                    <!-- 💡 데스크탑 전용 좌우 스크롤 화살표 버튼 -->
+                    <div class="rec-btn-group d-none d-sm-flex">
+                        <button type="button" class="rec-scroll-btn" id="btn-yt-left"><i class="bi bi-chevron-left"></i></button>
+                        <button type="button" class="rec-scroll-btn" id="btn-yt-right"><i class="bi bi-chevron-right"></i></button>
+                    </div>
+                </div>
+                <!-- 💡 row grid 대신 가로 스와이프가 가능한 컨테이너 사용 -->
+                <div class="recommended-scroll-container pb-2" id="youtube-results-container">
+                    <div class="w-100 text-center text-muted py-4"><div class="spinner-border spinner-border-sm me-2"></div>리뷰 영상을 불러오는 중입니다...</div>
+                </div>
+            </div>
+
+            <!-- ================= [카드 8: 추천 및 유사작 (IMDb 평점 완벽 대응)] ================= -->
+            <!-- 🚀 [순서 개편] 유튜브 리뷰 바로 아래로 배치 -->
+            {% if recommendations %}
+            <div class="detail-card">
+                <h5 class="fw-bold mb-3" style="font-size: 1.05rem;"><i class="bi bi-grid-fill me-2 text-primary"></i>추천 및 추천 유사작</h5>
+                <div class="row row-cols-3 row-cols-sm-3 row-cols-md-4 row-cols-lg-5 g-1 mt-1">
+                    {% for rec in recommendations %}
+                    <div class="col">
+                        <div class="movie-card h-100" id="movie-card-rec-{{ forloop.counter }}">
+                            {% if rec.is_in_db %}<a href="{% url 'movie_detail' rec.local_id %}" class="card-link flex-grow-1 text-decoration-none">
+                            {% else %}<div class="card-link flex-grow-1 text-decoration-none" style="cursor: zoom-in;" onclick="openPosterModal('{% if rec.poster_url %}{{ rec.poster_url }}{% endif %}')">{% endif %}
+                                <div class="poster-wrapper">
+                                    {% if rec.is_in_db %}<span class="badge bg-dark" style="position: absolute; top: 8px; left: 8px; font-size: 10px; z-index: 10; opacity: 0.9;">DB보유</span>{% endif %}
+                                    {% if rec.poster_url %}<img src="{{ rec.poster_url }}" class="poster-img" alt="{{ rec.title }}">{% else %}<div class="poster-img d-flex flex-column align-items-center justify-content-center text-muted bg-light" style="font-size: 12px;"><span>No Image</span></div>{% endif %}
+                                </div>
+                                <div class="movie-info-wrap">
+                                    <!-- 💡 [수정] DB에 번역명이 있으면 처음부터 출력하고, 'translated' 클래스를 달아 번역 스크립트가 건너뛰게 합니다! -->
+                                    <div class="movie-title {% if rec.is_in_db %}{% if rec.movie_obj.translated_title and rec.movie_obj.translated_title != '힣 번역 불가' %}translated{% else %}rec-translate-target{% endif %}{% endif %}" 
+                                         data-id="{{ rec.local_id }}" data-type="movie" 
+                                         title="{% if rec.is_in_db and rec.movie_obj.translated_title and rec.movie_obj.translated_title != '힣 번역 불가' %}*{{ rec.movie_obj.translated_title }}{% else %}{{ rec.title }}{% endif %}">
+                                        {% if rec.is_in_db and rec.movie_obj.translated_title and rec.movie_obj.translated_title != '힣 번역 불가' %}
+                                            *{{ rec.movie_obj.translated_title }}
+                                        {% else %}
+                                            {{ rec.title }}
+                                        {% endif %}
+                                    </div>
+                                    <div class="movie-meta text-truncate" title="{{ rec.genre|default:'정보 없음' }} | {{ rec.country|default:'국가 미상' }}">{{ rec.release_date|default:"----" }} {% if rec.genre and rec.genre != "정보 없음" %} · {{ rec.genre }}{% endif %} {% if rec.country and rec.country != "정보 없음" and rec.country != "국가 미상" %} · {{ rec.country }}{% endif %}</div>
+                                    
+                                    <!-- 💡 [완벽 대응] IMDb 평점이 0보다 크면 무조건 IMDb(평점+평가수) 노출, 없으면 기존 TMDB 노출! -->
+                                    <div class="d-flex rating-badge-container" id="badge-container-rec-{{ forloop.counter }}">
+                                        <span class="rating-badge bg-warning-subtle text-warning-emphasis">🎬 {% if rec.imdb_rating and rec.imdb_rating > 0 %}{{ rec.imdb_rating|floatformat:1 }}{% elif rec.rating and rec.rating > 0 %}{{ rec.rating|floatformat:1 }}{% else %}-{% endif %}</span>
+                                        <span class="vote-count-badge" data-votes="{% if rec.imdb_rating and rec.imdb_rating > 0 %}{{ rec.imdb_vote_count|default:0 }}{% else %}{{ rec.vote_count|default:0 }}{% endif %}"></span>
+                                        {% if rec.my_score %}<span class="rating-badge bg-primary-subtle text-primary my-score-badge">★ {{ rec.my_score }}</span>{% endif %}
+                                    </div>
+                                </div>
+                            {% if rec.is_in_db %}</a>{% else %}</div>{% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- ================= [카드 9: 메인 스태프진] ================= -->
+            <!-- 💡 [초보자 안내] 영화의 감독, 각본가 정보가 표시됩니다. -->
+            <!-- 🚀 [순서 개편] 추천작 아래, 출연진 위로 배치 -->
+            <div class="detail-card">
+                <h5 class="fw-bold mb-3" style="font-size: 1.05rem;"><i class="bi bi-person-workspace me-2 text-secondary"></i>메인 스태프진</h5>
+                <div class="row g-3">
+                    <div class="col-sm-6">
+                        {% if movie.tmdb_director and movie.tmdb_director != "-" and movie.tmdb_director != "정보 없음" %}<a href="{% url 'person_detail' movie.tmdb_director_id %}" class="text-decoration-none text-dark d-block h-100">{% else %}<div class="text-dark d-block h-100">{% endif %}
+                            <div class="d-flex align-items-center gap-3 p-2.5 bg-light border rounded-3 transition-hover shadow-sm-hover h-100">
+                                <div style="width: 50px; height: 50px; flex-shrink: 0;" class="rounded-circle overflow-hidden bg-secondary-subtle">
+                                    {% if movie.tmdb_director_image_url %}<img src="{{ movie.tmdb_director_image_url }}" class="w-100 h-100" style="object-fit: cover;" alt="{{ movie.tmdb_director }}">{% else %}<div class="w-100 h-100 d-flex align-items-center justify-content-center text-muted" style="font-size: 18px;"><i class="bi bi-person-fill"></i></div>{% endif %}
+                                </div>
+                                <div><div class="text-muted small" style="font-size: 11px;">감독 (Director)</div><div class="fw-bold" style="font-size: 14px;">{{ movie.tmdb_director|default:"-" }}</div></div>
+                            </div>
+                        {% if movie.tmdb_director and movie.tmdb_director != "-" and movie.tmdb_director != "정보 없음" %}</a>{% else %}</div>{% endif %}
+                    </div>
+                    <div class="col-sm-6">
+                        {% if movie.tmdb_screenwriter and movie.tmdb_screenwriter != "-" and movie.tmdb_screenwriter != "정보 없음" %}<a ref="{% url 'person_detail' movie.tmdb_screenwriter_id %}" class="text-decoration-none text-dark d-block h-100">{% else %}<div class="text-dark d-block h-100">{% endif %}
+                            <div class="d-flex align-items-center gap-3 p-2.5 bg-light border rounded-3 transition-hover shadow-sm-hover h-100">
+                                <div style="width: 50px; height: 50px; flex-shrink: 0;" class="rounded-circle overflow-hidden bg-secondary-subtle d-flex align-items-center justify-content-center text-muted fs-4"><i class="bi bi-pencil-square"></i></div>
+                                <div><div class="text-muted small" style="font-size: 11px;">각본가 (Writer)</div><div class="fw-bold text-truncate" style="font-size: 14px; max-width: 180px;" title="{{ movie.tmdb_screenwriter }}">{{ movie.tmdb_screenwriter|default:"-" }}</div></div>
+                            </div>
+                        {% if movie.tmdb_screenwriter and movie.tmdb_screenwriter != "-" and movie.tmdb_screenwriter != "정보 없음" %}</a>{% else %}</div>{% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- ================= [카드 10: 주요 출연진 (가로 스크롤 적용)] ================= -->
+            <!-- 🚀 [순서/기능 개편] 스태프진 밑으로 이동 + 가로 스와이프 및 화살표 추가 -->
+            {% if movie.tmdb_actor_details %}
+            <div class="detail-card">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="fw-bold m-0" style="font-size: 1.05rem;"><i class="bi bi-people-fill me-2 text-secondary"></i>주요 출연진 및 배역명</h5>
+                    <!-- 💡 데스크탑용 좌우 화살표 -->
+                    <div class="rec-btn-group d-none d-sm-flex">
+                        <button type="button" class="rec-scroll-btn" id="btn-actor-left"><i class="bi bi-chevron-left"></i></button>
+                        <button type="button" class="rec-scroll-btn" id="btn-actor-right"><i class="bi bi-chevron-right"></i></button>
+                    </div>
+                </div>
+                
+                <!-- 💡 row grid 대신 가로 스크롤 컨테이너 적용 -->
+                <div class="recommended-scroll-container pb-2" id="actor-scroll-container">
+                    {% for actor in movie.tmdb_actor_details %}
+                    <div class="recommended-item" style="flex: 0 0 110px; max-width: 110px;">
+                        <!-- 💡 actor.id 가 있으면 ID를 보내고, 없으면 fallback으로 이름을 보냅니다 -->
+			<a href="{% url 'person_detail' actor.id %}" class="text-decoration-none text-dark d-block h-100">
+                            <div class="profile-card">
+                                <div class="profile-img-wrap">
+                                    {% if actor.profile_url %}<img src="{{ actor.profile_url }}" class="profile-img" alt="{{ actor.name }}">{% else %}<div class="profile-img d-flex align-items-center justify-content-center text-muted fs-2"><i class="bi bi-person-fill"></i></div>{% endif %}
+                                </div>
+                                <div class="p-2">
+                                    <div class="fw-bold text-truncate" style="font-size: 12px;" title="{{ actor.name }}">{{ actor.name }}</div>
+                                    <div class="text-muted text-truncate" style="font-size: 11px;" title="{{ actor.character }}">{{ actor.character }}</div>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- 💡 [추가] 키워드에서 불러올 '영화 카드' 전용 CSS 스타일 장착! -->
+            {% include 'partials/comp_movie_card_style.html' %}
+
+            <!-- ================= [카드 11: 연관 키워드 (스마트 접기 적용)] ================= -->
+            {% if movie.tmdb_keywords %}
+            <div class="detail-card mb-5">
+                <h5 class="fw-bold mb-3" style="font-size: 1.05rem;"><i class="bi bi-tags-fill me-2 text-secondary"></i>연관 키워드</h5>
+                <div class="keyword-wrapper collapsed" id="keyword-wrapper">
+                    <div class="d-flex flex-wrap gap-2" id="keywords-container">
+                    </div>
+                </div>
+                <button class="btn btn-link text-decoration-none p-0 mt-2 text-muted fw-bold" style="font-size: 12px; display: none;" id="keyword-toggle-btn" onclick="toggleKeywords()">+ 펼치기</button>
+                
+                <!-- 🚀 [추가됨] 키워드를 누르면 홈 화면 스타일의 스와이프 카드가 꽂히는 빈 영역 -->
+                <div id="keyword-rec-container" class="mt-4 pt-3 border-top d-none"></div>
+            </div>
+            {% endif %}
+
+        </div>
+        
+        <!-- 추천작 등에서 썸네일 클릭 시 팝업 띄우는 모달 -->
+        <div id="posterModal" class="poster-modal" onclick="closePosterModal()">
+            <img id="modalImage" src="" alt="포스터 확대">
+        </div>
+    </main>
+    
+<!-- ================= [하단 고정 푸터 (심플 텍스트)] ================= -->
+{% include 'partials/layout_footer.html' %}
+
+<!-- ================= [자바스크립트 및 인터랙션 로직] ================= -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- 🚀 공통 상단 네비게이션(검색창) 스크립트 불러오기 -->
+{% include 'partials/script_top_nav.html' %}
+
+<!-- 🚀 상세 페이지 전용 통합 스크립트 불러오기 -->
+{% include 'partials/script_detail.html' %}
+
+<!-- 💡 공통 로딩 오버레이 & 페이지 이동 딜레이 -->
+{% include 'partials/layout_loading_overlay.html' %}
+
+</body>
+</html>
