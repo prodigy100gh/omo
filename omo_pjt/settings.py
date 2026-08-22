@@ -87,20 +87,12 @@ WSGI_APPLICATION = 'omo_pjt.wsgi.application'
 
 DATABASE_URL = os.environ.get('DATABASE_URL')
 
-if DATABASE_URL:
-    DATABASES = {
-        'default': dj_database_url.config(default=DATABASE_URL, conn_max_age=600)
-    }
-else:
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',
-            'OPTIONS': {
-                'timeout': 20,
-            },
-        }
-    }
+DATABASES = {
+    'default': dj_database_url.config(
+        default='postgresql://omo_hlrc_user:uM03trQ9BrP07pxCaBuYir8BzQiJKnRW@dpg-da4leb8jo6nc73dc3pg0-a.singapore-postgres.render.com/omo_hlrc',
+        conn_max_age=600
+    )
+}
 
 
 # Password validation
