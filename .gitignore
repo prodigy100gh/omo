@@ -7,8 +7,16 @@ __pycache__/
 
 # 임시 데이터베이스 (서버용 DB는 따로 만들 예정입니다)
 db.sqlite3
+db-백업.sqlite3
 
-# 너무 커서 안 올라가는 백업 데이터 파일들
-movies_backup.json
+#데이터 파일들
 title.basics.tsv.gz
 title.ratings.tsv.gz
+
+# 개인파일
+■정리중.txt
+Gemini 모델별 차이.txt
+imdb data download.url
+omo.url
+omo 관리자.url
+비번 강제 변경.txt
