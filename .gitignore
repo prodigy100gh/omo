@@ -14,9 +14,5 @@ title.basics.tsv.gz
 title.ratings.tsv.gz
 
 # 개인파일
-■정리중.txt
-Gemini 모델별 차이.txt
-imdb data download.url
-omo.url
-omo 관리자.url
-비번 강제 변경.txt
+*.txt
+*.url

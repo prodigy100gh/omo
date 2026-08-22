@@ -30,7 +30,7 @@ class Movie(models.Model):
     
     tmdb_overview = models.TextField(blank=True, default="", verbose_name="TMDB 줄거리")
     tmdb_poster_url = models.URLField(max_length=500, blank=True, default="", verbose_name="TMDB 포스터 URL")
-    backdrop_path = models.CharField(max_length=200, null=True, blank=True, verbose_name="TMDB 가로 배경 URL")
+    backdrop_path = models.CharField(max_length=500, null=True, blank=True, verbose_name="TMDB 가로 배경 URL")
     tmdb_trailer_url = models.URLField(max_length=500, blank=True, default="", verbose_name="TMDB 공식 예고편 URL")
 
     is_adult_content = models.BooleanField(default=False)
@@ -54,17 +54,17 @@ class Movie(models.Model):
     # ==========================================
     # 4. TMDB 등급, 제작, 국가 데이터
     # ==========================================
-    tmdb_certification_kr = models.CharField(max_length=50, blank=True, default="", verbose_name="TMDB KR등급")
-    tmdb_certification_us = models.CharField(max_length=50, blank=True, default="", verbose_name="TMDB US등급")
+    tmdb_certification_kr = models.CharField(max_length=255, blank=True, default="", verbose_name="TMDB KR등급")
+    tmdb_certification_us = models.CharField(max_length=255, blank=True, default="", verbose_name="TMDB US등급")
 
-    tmdb_original_language = models.CharField(max_length=50, null=True, blank=True, verbose_name="원어")
+    tmdb_original_language = models.CharField(max_length=255, null=True, blank=True, verbose_name="원어")
     
     tmdb_budget = models.BigIntegerField(default=0, verbose_name="TMDB 제작 예산 ($)")
     tmdb_revenue = models.BigIntegerField(default=0, verbose_name="TMDB 흥행 수익 ($)")
 
-    tmdb_production_country_code = models.CharField(max_length=50, blank=True, default="", verbose_name="TMDB 국가 코드 (ISO)")
-    tmdb_production_country_eng = models.CharField(max_length=200, blank=True, default="", verbose_name="TMDB 영문 국가명")
-    tmdb_production_country_kr = models.CharField(max_length=200, blank=True, default="", verbose_name="TMDB 한글 국가명")
+    tmdb_production_country_code = models.CharField(max_length=255, blank=True, default="", verbose_name="TMDB 국가 코드 (ISO)")
+    tmdb_production_country_eng = models.CharField(max_length=500, blank=True, default="", verbose_name="TMDB 영문 국가명")
+    tmdb_production_country_kr = models.CharField(max_length=500, blank=True, default="", verbose_name="TMDB 한글 국가명")
 
     # ==========================================
     # 5. IMDb 출처 및 시스템 관리 필드
@@ -239,7 +239,7 @@ class TvSeries(models.Model):
 
     tmdb_overview = models.TextField(null=True, blank=True, verbose_name="TMDB 줄거리")
     tmdb_poster_url = models.URLField(max_length=500, null=True, blank=True, verbose_name="TMDB 포스터 URL")
-    backdrop_path = models.CharField(max_length=255, null=True, blank=True, verbose_name="TMDB 가로 배경 URL")
+    backdrop_path = models.CharField(max_length=500, null=True, blank=True, verbose_name="TMDB 가로 배경 URL")
     tmdb_trailer_url = models.URLField(max_length=500, null=True, blank=True, verbose_name="TMDB 공식 예고편 URL")
 
     # ==========================================
@@ -261,20 +261,20 @@ class TvSeries(models.Model):
     # ==========================================
     # 4. TMDB 등급, 제작, 시즌, 국가 데이터
     # ==========================================
-    tmdb_certification_kr = models.CharField(max_length=50, null=True, blank=True, verbose_name="TMDB KR등급")
-    tmdb_certification_us = models.CharField(max_length=50, null=True, blank=True, verbose_name="TMDB US등급")
+    tmdb_certification_kr = models.CharField(max_length=255, null=True, blank=True, verbose_name="TMDB KR등급")
+    tmdb_certification_us = models.CharField(max_length=255, null=True, blank=True, verbose_name="TMDB US등급")
 
-    tmdb_original_language = models.CharField(max_length=50, null=True, blank=True, verbose_name="원어")
+    tmdb_original_language = models.CharField(max_length=255, null=True, blank=True, verbose_name="원어")
     
     tmdb_budget = models.BigIntegerField(default=0, verbose_name="TMDB 제작 예산 ($)")
     tmdb_revenue = models.BigIntegerField(default=0, verbose_name="TMDB 흥행 수익 ($)")
 
-    tmdb_production_country_code = models.CharField(max_length=50, null=True, blank=True, verbose_name="TMDB 국가 코드 (ISO)")
-    tmdb_production_country_eng = models.CharField(max_length=100, null=True, blank=True, verbose_name="TMDB 영문 국가명")
-    tmdb_production_country_kr = models.CharField(max_length=100, null=True, blank=True, verbose_name="TMDB 한글 국가명")
+    tmdb_production_country_code = models.CharField(max_length=255, null=True, blank=True, verbose_name="TMDB 국가 코드 (ISO)")
+    tmdb_production_country_eng = models.CharField(max_length=500, null=True, blank=True, verbose_name="TMDB 영문 국가명")
+    tmdb_production_country_kr = models.CharField(max_length=500, null=True, blank=True, verbose_name="TMDB 한글 국가명")
 
     tmdb_number_of_seasons = models.IntegerField(null=True, blank=True, default=0, verbose_name="TMDB 총 시즌 수")
-    tmdb_status = models.CharField(max_length=50, null=True, blank=True, verbose_name="TMDB 방영 상태 (완결/방영중)")
+    tmdb_status = models.CharField(max_length=255, null=True, blank=True, verbose_name="TMDB 방영 상태 (완결/방영중)")
     seasons_data = models.JSONField(null=True, blank=True, verbose_name="TMDB 시즌별 상세 정보 (JSON)")
 
     # ==========================================
@@ -284,7 +284,7 @@ class TvSeries(models.Model):
     imdb_vote_count = models.IntegerField(default=0, db_index=True, verbose_name="IMDb 평가수")
     imdb_runtime = models.IntegerField(default=0, verbose_name="IMDb 평균 상영시간(분)")
     imdb_genre = models.CharField(max_length=255, null=True, blank=True, verbose_name="IMDb 장르")
-    imdb_release_date = models.CharField(max_length=50, null=True, blank=True, verbose_name="IMDb 방영 시작 연도")
+    imdb_release_date = models.CharField(max_length=255, null=True, blank=True, verbose_name="IMDb 방영 시작 연도")
 
     youtube_trailer_url = models.CharField(max_length=500, blank=True, null=True, verbose_name="유튜브 자체 검색 예고편 URL")
 
