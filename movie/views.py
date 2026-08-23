@@ -193,14 +193,14 @@ def get_ott_list_with_logos(queryset):
     return [
         # 🇰🇷 국내 및 메이저 OTT (공식 로고 적용)
         {'id': 'Netflix', 'name': '넷플릭스', 'logo': 'https://image.tmdb.org/t/p/original/t2yyOv40HZeVlLjVrCsPhqZf40.jpg'},
-        {'id': 'Netflix Standard with Ads', 'name': '넷플릭스 광고형', 'logo': 'https://image.tmdb.org/t/p/original/t2yyOv40HZeVlLjVrCsPhqZf40.jpg'},
-        {'id': 'Disney Plus', 'name': '디즈니+', 'logo': 'https://image.tmdb.org/t/p/original/7rwgEs15tFwyR9NPQ5avqIqJiZp.jpg'},
-        {'id': 'Wavve', 'name': '웨이브', 'logo': '/static/images/Wavve_icon.png'},
+#        {'id': 'Netflix Standard with Ads', 'name': '넷플릭스 광고형', 'logo': 'https://image.tmdb.org/t/p/original/t2yyOv40HZeVlLjVrCsPhqZf40.jpg'},
         {'id': 'TVING', 'name': '티빙', 'logo': 'https://www.tving.com/favicon.ico'},
+        {'id': 'Coupang Play', 'name': '쿠팡플레이', 'logo': 'https://image.tmdb.org/t/p/original/11P8CRGhw48L1A4G54u1bX0m0O2.jpg'},
+        {'id': 'Wavve', 'name': '웨이브', 'logo': '/static/images/Wavve_icon.png'},
+        {'id': 'Disney Plus', 'name': '디즈니+', 'logo': 'https://image.tmdb.org/t/p/original/7rwgEs15tFwyR9NPQ5avqIqJiZp.jpg'},
         {'id': 'Watcha', 'name': '왓챠', 'logo': '/static/images/WATCHA_icon_Square.png'},
         {'id': 'Apple TV Plus', 'name': '애플 TV+', 'logo': 'https://image.tmdb.org/t/p/original/6uhKBfmtzFqOcLousHwZkxycsNM.jpg'},
         {'id': 'Amazon Prime Video', 'name': '아마존 프라임', 'logo': 'https://image.tmdb.org/t/p/original/if691eP3Q3r0yJ0zT4pXoD43OqM.jpg'},
-        {'id': 'Coupang Play', 'name': '쿠팡플레이', 'logo': 'https://image.tmdb.org/t/p/original/11P8CRGhw48L1A4G54u1bX0m0O2.jpg'},
         
         # 🌍 해외/글로벌 OTT (인지도 있는 플랫폼 위주로 아이콘 추가)
         {'id': 'Sun Nxt', 'name': 'Sun Nxt', 'logo': 'https://image.tmdb.org/t/p/original/uJjXEiQ6GzH16Kz8B6c8z1pCj1M.jpg'},
