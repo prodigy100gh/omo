@@ -1288,28 +1288,29 @@ def home(request):
         
     # 💡 5만개 스캔 방지: 인기 국가 강제 고정
     # 💡 국기 이모지가 포함된 국가 리스트 (id: DB조회용, name: 화면표시용)
+    # 💡 윈도우에서도 절대 안 깨지는 고화질 국기 이미지 적용 
     countries_list = [
-        {'id': '한국', 'name': '🇰🇷 한국'},
-        {'id': '미국', 'name': '🇺🇸 미국'},
-        {'id': '영국', 'name': '🇬🇧 영국'},
-        {'id': '일본', 'name': '🇯🇵 일본'},
-        {'id': '중국', 'name': '🇨🇳 중국'},
-        {'id': '홍콩', 'name': '🇭🇰 홍콩'},
-        {'id': '인도', 'name': '🇮🇳 인도'},
-        {'id': '프랑스', 'name': '🇫🇷 프랑스'},
-        {'id': '캐나다', 'name': '🇨🇦 캐나다'},
-        {'id': '독일', 'name': '🇩🇪 독일'},
-        {'id': '스페인', 'name': '🇪🇸 스페인'},
-        {'id': '벨기에', 'name': '🇧🇪 벨기에'},
-        {'id': '호주', 'name': '🇦🇺 호주'},
-        {'id': '이탈리아', 'name': '🇮🇹 이탈리아'},
-        {'id': '스웨덴', 'name': '🇸🇪 스웨덴'},
-        {'id': '아일랜드', 'name': '🇮🇪 아일랜드'},
-        {'id': '터키', 'name': '🇹🇷 터키'},
-        {'id': '덴마크', 'name': '🇩🇰 덴마크'},
-        {'id': '스위스', 'name': '🇨🇭 스위스'},
-        {'id': '노르웨이', 'name': '🇳🇴 노르웨이'},
-        {'id': '정보 없음', 'name': '🌐 정보 없음'}
+        {'id': '한국', 'name': '한국', 'flag': 'https://flagcdn.com/w40/kr.png'},
+        {'id': '미국', 'name': '미국', 'flag': 'https://flagcdn.com/w40/us.png'},
+        {'id': '영국', 'name': '영국', 'flag': 'https://flagcdn.com/w40/gb.png'},
+        {'id': '일본', 'name': '일본', 'flag': 'https://flagcdn.com/w40/jp.png'},
+        {'id': '중국', 'name': '중국', 'flag': 'https://flagcdn.com/w40/cn.png'},
+        {'id': '홍콩', 'name': '홍콩', 'flag': 'https://flagcdn.com/w40/hk.png'},
+        {'id': '인도', 'name': '인도', 'flag': 'https://flagcdn.com/w40/in.png'},
+        {'id': '프랑스', 'name': '프랑스', 'flag': 'https://flagcdn.com/w40/fr.png'},
+        {'id': '캐나다', 'name': '캐나다', 'flag': 'https://flagcdn.com/w40/ca.png'},
+        {'id': '독일', 'name': '독일', 'flag': 'https://flagcdn.com/w40/de.png'},
+        {'id': '스페인', 'name': '스페인', 'flag': 'https://flagcdn.com/w40/es.png'},
+        {'id': '벨기에', 'name': '벨기에', 'flag': 'https://flagcdn.com/w40/be.png'},
+        {'id': '호주', 'name': '호주', 'flag': 'https://flagcdn.com/w40/au.png'},
+        {'id': '이탈리아', 'name': '이탈리아', 'flag': 'https://flagcdn.com/w40/it.png'},
+        {'id': '스웨덴', 'name': '스웨덴', 'flag': 'https://flagcdn.com/w40/se.png'},
+        {'id': '아일랜드', 'name': '아일랜드', 'flag': 'https://flagcdn.com/w40/ie.png'},
+        {'id': '터키', 'name': '터키', 'flag': 'https://flagcdn.com/w40/tr.png'},
+        {'id': '덴마크', 'name': '덴마크', 'flag': 'https://flagcdn.com/w40/dk.png'},
+        {'id': '스위스', 'name': '스위스', 'flag': 'https://flagcdn.com/w40/ch.png'},
+        {'id': '노르웨이', 'name': '노르웨이', 'flag': 'https://flagcdn.com/w40/no.png'},
+#        {'id': '정보 없음', 'name': '정보 없음', 'flag': 'https://www.google.com/s2/favicons?domain=wikipedia.org&sz=128'}
     ]
 
     base_rec_pool = common_movies
@@ -1552,28 +1553,29 @@ def rec_more_movies_view(request):
         if selected_otts: country_base = country_base.filter(ott_queries)
     # 💡 5만개 스캔 방지: 인기 국가 강제 고정
     # 💡 국기 이모지가 포함된 국가 리스트 (id: DB조회용, name: 화면표시용)
+    # 💡 윈도우에서도 절대 안 깨지는 고화질 국기 이미지 적용 
     countries_list = [
-        {'id': '한국', 'name': '🇰🇷 한국'},
-        {'id': '미국', 'name': '🇺🇸 미국'},
-        {'id': '영국', 'name': '🇬🇧 영국'},
-        {'id': '일본', 'name': '🇯🇵 일본'},
-        {'id': '중국', 'name': '🇨🇳 중국'},
-        {'id': '홍콩', 'name': '🇭🇰 홍콩'},
-        {'id': '인도', 'name': '🇮🇳 인도'},
-        {'id': '프랑스', 'name': '🇫🇷 프랑스'},
-        {'id': '캐나다', 'name': '🇨🇦 캐나다'},
-        {'id': '독일', 'name': '🇩🇪 독일'},
-        {'id': '스페인', 'name': '🇪🇸 스페인'},
-        {'id': '벨기에', 'name': '🇧🇪 벨기에'},
-        {'id': '호주', 'name': '🇦🇺 호주'},
-        {'id': '이탈리아', 'name': '🇮🇹 이탈리아'},
-        {'id': '스웨덴', 'name': '🇸🇪 스웨덴'},
-        {'id': '아일랜드', 'name': '🇮🇪 아일랜드'},
-        {'id': '터키', 'name': '🇹🇷 터키'},
-        {'id': '덴마크', 'name': '🇩🇰 덴마크'},
-        {'id': '스위스', 'name': '🇨🇭 스위스'},
-        {'id': '노르웨이', 'name': '🇳🇴 노르웨이'},
-        {'id': '정보 없음', 'name': '🌐 정보 없음'}
+        {'id': '한국', 'name': '한국', 'flag': 'https://flagcdn.com/w40/kr.png'},
+        {'id': '미국', 'name': '미국', 'flag': 'https://flagcdn.com/w40/us.png'},
+        {'id': '영국', 'name': '영국', 'flag': 'https://flagcdn.com/w40/gb.png'},
+        {'id': '일본', 'name': '일본', 'flag': 'https://flagcdn.com/w40/jp.png'},
+        {'id': '중국', 'name': '중국', 'flag': 'https://flagcdn.com/w40/cn.png'},
+        {'id': '홍콩', 'name': '홍콩', 'flag': 'https://flagcdn.com/w40/hk.png'},
+        {'id': '인도', 'name': '인도', 'flag': 'https://flagcdn.com/w40/in.png'},
+        {'id': '프랑스', 'name': '프랑스', 'flag': 'https://flagcdn.com/w40/fr.png'},
+        {'id': '캐나다', 'name': '캐나다', 'flag': 'https://flagcdn.com/w40/ca.png'},
+        {'id': '독일', 'name': '독일', 'flag': 'https://flagcdn.com/w40/de.png'},
+        {'id': '스페인', 'name': '스페인', 'flag': 'https://flagcdn.com/w40/es.png'},
+        {'id': '벨기에', 'name': '벨기에', 'flag': 'https://flagcdn.com/w40/be.png'},
+        {'id': '호주', 'name': '호주', 'flag': 'https://flagcdn.com/w40/au.png'},
+        {'id': '이탈리아', 'name': '이탈리아', 'flag': 'https://flagcdn.com/w40/it.png'},
+        {'id': '스웨덴', 'name': '스웨덴', 'flag': 'https://flagcdn.com/w40/se.png'},
+        {'id': '아일랜드', 'name': '아일랜드', 'flag': 'https://flagcdn.com/w40/ie.png'},
+        {'id': '터키', 'name': '터키', 'flag': 'https://flagcdn.com/w40/tr.png'},
+        {'id': '덴마크', 'name': '덴마크', 'flag': 'https://flagcdn.com/w40/dk.png'},
+        {'id': '스위스', 'name': '스위스', 'flag': 'https://flagcdn.com/w40/ch.png'},
+        {'id': '노르웨이', 'name': '노르웨이', 'flag': 'https://flagcdn.com/w40/no.png'},
+#        {'id': '정보 없음', 'name': '정보 없음', 'flag': 'https://www.google.com/s2/favicons?domain=wikipedia.org&sz=128'}
     ]
 
     base_rec_pool = common_movies
@@ -1796,28 +1798,29 @@ def rec_more_tv_view(request):
         if selected_genres: country_base = country_base.filter(genre_queries)
         if selected_otts: country_base = country_base.filter(ott_queries)
     # 💡 국기 이모지가 포함된 국가 리스트 (id: DB조회용, name: 화면표시용)
+    # 💡 윈도우에서도 절대 안 깨지는 고화질 국기 이미지 적용 
     countries_list = [
-        {'id': '한국', 'name': '🇰🇷 한국'},
-        {'id': '미국', 'name': '🇺🇸 미국'},
-        {'id': '영국', 'name': '🇬🇧 영국'},
-        {'id': '일본', 'name': '🇯🇵 일본'},
-        {'id': '중국', 'name': '🇨🇳 중국'},
-        {'id': '홍콩', 'name': '🇭🇰 홍콩'},
-        {'id': '인도', 'name': '🇮🇳 인도'},
-        {'id': '프랑스', 'name': '🇫🇷 프랑스'},
-        {'id': '캐나다', 'name': '🇨🇦 캐나다'},
-        {'id': '독일', 'name': '🇩🇪 독일'},
-        {'id': '스페인', 'name': '🇪🇸 스페인'},
-        {'id': '벨기에', 'name': '🇧🇪 벨기에'},
-        {'id': '호주', 'name': '🇦🇺 호주'},
-        {'id': '이탈리아', 'name': '🇮🇹 이탈리아'},
-        {'id': '스웨덴', 'name': '🇸🇪 스웨덴'},
-        {'id': '아일랜드', 'name': '🇮🇪 아일랜드'},
-        {'id': '터키', 'name': '🇹🇷 터키'},
-        {'id': '덴마크', 'name': '🇩🇰 덴마크'},
-        {'id': '스위스', 'name': '🇨🇭 스위스'},
-        {'id': '노르웨이', 'name': '🇳🇴 노르웨이'},
-        {'id': '정보 없음', 'name': '🌐 정보 없음'}
+        {'id': '한국', 'name': '한국', 'flag': 'https://flagcdn.com/w40/kr.png'},
+        {'id': '미국', 'name': '미국', 'flag': 'https://flagcdn.com/w40/us.png'},
+        {'id': '영국', 'name': '영국', 'flag': 'https://flagcdn.com/w40/gb.png'},
+        {'id': '일본', 'name': '일본', 'flag': 'https://flagcdn.com/w40/jp.png'},
+        {'id': '중국', 'name': '중국', 'flag': 'https://flagcdn.com/w40/cn.png'},
+        {'id': '홍콩', 'name': '홍콩', 'flag': 'https://flagcdn.com/w40/hk.png'},
+        {'id': '인도', 'name': '인도', 'flag': 'https://flagcdn.com/w40/in.png'},
+        {'id': '프랑스', 'name': '프랑스', 'flag': 'https://flagcdn.com/w40/fr.png'},
+        {'id': '캐나다', 'name': '캐나다', 'flag': 'https://flagcdn.com/w40/ca.png'},
+        {'id': '독일', 'name': '독일', 'flag': 'https://flagcdn.com/w40/de.png'},
+        {'id': '스페인', 'name': '스페인', 'flag': 'https://flagcdn.com/w40/es.png'},
+        {'id': '벨기에', 'name': '벨기에', 'flag': 'https://flagcdn.com/w40/be.png'},
+        {'id': '호주', 'name': '호주', 'flag': 'https://flagcdn.com/w40/au.png'},
+        {'id': '이탈리아', 'name': '이탈리아', 'flag': 'https://flagcdn.com/w40/it.png'},
+        {'id': '스웨덴', 'name': '스웨덴', 'flag': 'https://flagcdn.com/w40/se.png'},
+        {'id': '아일랜드', 'name': '아일랜드', 'flag': 'https://flagcdn.com/w40/ie.png'},
+        {'id': '터키', 'name': '터키', 'flag': 'https://flagcdn.com/w40/tr.png'},
+        {'id': '덴마크', 'name': '덴마크', 'flag': 'https://flagcdn.com/w40/dk.png'},
+        {'id': '스위스', 'name': '스위스', 'flag': 'https://flagcdn.com/w40/ch.png'},
+        {'id': '노르웨이', 'name': '노르웨이', 'flag': 'https://flagcdn.com/w40/no.png'},
+#        {'id': '정보 없음', 'name': '정보 없음', 'flag': 'https://www.google.com/s2/favicons?domain=wikipedia.org&sz=128'}
     ]
 
     base_rec_pool = common_series
@@ -2191,28 +2194,29 @@ def all_list(request):
         ]
 
     # 💡 국기 이모지가 포함된 국가 리스트 (id: DB조회용, name: 화면표시용)
+    # 💡 윈도우에서도 절대 안 깨지는 고화질 국기 이미지 적용 
     countries_list = [
-        {'id': '한국', 'name': '🇰🇷 한국'},
-        {'id': '미국', 'name': '🇺🇸 미국'},
-        {'id': '영국', 'name': '🇬🇧 영국'},
-        {'id': '일본', 'name': '🇯🇵 일본'},
-        {'id': '중국', 'name': '🇨🇳 중국'},
-        {'id': '홍콩', 'name': '🇭🇰 홍콩'},
-        {'id': '인도', 'name': '🇮🇳 인도'},
-        {'id': '프랑스', 'name': '🇫🇷 프랑스'},
-        {'id': '캐나다', 'name': '🇨🇦 캐나다'},
-        {'id': '독일', 'name': '🇩🇪 독일'},
-        {'id': '스페인', 'name': '🇪🇸 스페인'},
-        {'id': '벨기에', 'name': '🇧🇪 벨기에'},
-        {'id': '호주', 'name': '🇦🇺 호주'},
-        {'id': '이탈리아', 'name': '🇮🇹 이탈리아'},
-        {'id': '스웨덴', 'name': '🇸🇪 스웨덴'},
-        {'id': '아일랜드', 'name': '🇮🇪 아일랜드'},
-        {'id': '터키', 'name': '🇹🇷 터키'},
-        {'id': '덴마크', 'name': '🇩🇰 덴마크'},
-        {'id': '스위스', 'name': '🇨🇭 스위스'},
-        {'id': '노르웨이', 'name': '🇳🇴 노르웨이'},
-        {'id': '정보 없음', 'name': '🌐 정보 없음'}
+        {'id': '한국', 'name': '한국', 'flag': 'https://flagcdn.com/w40/kr.png'},
+        {'id': '미국', 'name': '미국', 'flag': 'https://flagcdn.com/w40/us.png'},
+        {'id': '영국', 'name': '영국', 'flag': 'https://flagcdn.com/w40/gb.png'},
+        {'id': '일본', 'name': '일본', 'flag': 'https://flagcdn.com/w40/jp.png'},
+        {'id': '중국', 'name': '중국', 'flag': 'https://flagcdn.com/w40/cn.png'},
+        {'id': '홍콩', 'name': '홍콩', 'flag': 'https://flagcdn.com/w40/hk.png'},
+        {'id': '인도', 'name': '인도', 'flag': 'https://flagcdn.com/w40/in.png'},
+        {'id': '프랑스', 'name': '프랑스', 'flag': 'https://flagcdn.com/w40/fr.png'},
+        {'id': '캐나다', 'name': '캐나다', 'flag': 'https://flagcdn.com/w40/ca.png'},
+        {'id': '독일', 'name': '독일', 'flag': 'https://flagcdn.com/w40/de.png'},
+        {'id': '스페인', 'name': '스페인', 'flag': 'https://flagcdn.com/w40/es.png'},
+        {'id': '벨기에', 'name': '벨기에', 'flag': 'https://flagcdn.com/w40/be.png'},
+        {'id': '호주', 'name': '호주', 'flag': 'https://flagcdn.com/w40/au.png'},
+        {'id': '이탈리아', 'name': '이탈리아', 'flag': 'https://flagcdn.com/w40/it.png'},
+        {'id': '스웨덴', 'name': '스웨덴', 'flag': 'https://flagcdn.com/w40/se.png'},
+        {'id': '아일랜드', 'name': '아일랜드', 'flag': 'https://flagcdn.com/w40/ie.png'},
+        {'id': '터키', 'name': '터키', 'flag': 'https://flagcdn.com/w40/tr.png'},
+        {'id': '덴마크', 'name': '덴마크', 'flag': 'https://flagcdn.com/w40/dk.png'},
+        {'id': '스위스', 'name': '스위스', 'flag': 'https://flagcdn.com/w40/ch.png'},
+        {'id': '노르웨이', 'name': '노르웨이', 'flag': 'https://flagcdn.com/w40/no.png'},
+#        {'id': '정보 없음', 'name': '정보 없음', 'flag': 'https://www.google.com/s2/favicons?domain=wikipedia.org&sz=128'}
     ]
 
     # 4. 💡 8대 필터 파라미터 수신 (이 주석 아래부터 덮어쓰기!)
