@@ -209,7 +209,7 @@ def get_ott_list_with_logos(queryset):
         {'id': 'Bloodstream', 'name': 'Bloodstream', 'logo': ''},
         {'id': 'Hoichoi', 'name': 'Hoichoi', 'logo': ''},
         {'id': 'DocAlliance Films', 'name': 'DocAlliance Films', 'logo': ''},
-        {'id': 'Crunchyroll', 'name': '크런치롤', 'logo': ''},
+        {'id': 'Crunchyroll', 'name': 'Crunchyroll', 'logo': ''},
         {'id': 'KableOne', 'name': 'KableOne', 'logo': ''},
         {'id': 'Dekkoo', 'name': 'Dekkoo', 'logo': ''},
         {'id': 'Magellan TV', 'name': 'Magellan TV', 'logo': ''},
