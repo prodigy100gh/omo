@@ -170,72 +170,52 @@ def get_display_runtime(tmdb_r, imdb_r):
         except (ValueError, TypeError): pass
     return 0
 
-# 💡 [헬퍼 4] 필터 드롭다운용 장르 리스트 동적 생성
+# 💡 [헬퍼 4] 필터 드롭다운용 장르 리스트 (영화 / TV 분리형, 통계 기반 순서 고정)
 def get_all_genres(queryset):
-    # 💡 [속도 최적화] SQL 쿼리문 자체를 지문(Hash)으로 떠서, 조건이 완벽히 같을 때만 캐시를 재사용! (동적 필터링 기능 100% 유지)
-    query_hash = hashlib.md5(str(queryset.query).encode('utf-8')).hexdigest()
-    cache_key = f"genres_list_v1_{query_hash}"
-    cached_data = cache.get(cache_key)
-    if cached_data: return cached_data
-
-    val_set = set()
-    raw_data = queryset.values_list('tmdb_genre', 'imdb_genre')
-    for tmdb_g, imdb_g in raw_data:
-        g_str = get_display_genre(tmdb_g, imdb_g)
-        if not g_str or g_str == '정보 없음': val_set.add('정보 없음')
-        else:
-            for s in g_str.split(','):
-                v = s.strip()
-                if v and v != 'None': val_set.add(v)
     
-    result = sorted(list(val_set), key=lambda x: (1, x) if x.replace(' ', '') == '정보없음' else (0, x))
-    cache.set(cache_key, result, timeout=86400) # 하루 동안 연산 프리패스
-    return result
+    # 📺 1. TV 시리즈 화면일 때 (TV 시리즈 인기 장르 순서)
+    if queryset.model.__name__ == 'TvSeries':
+        return [
+            '드라마', '코미디', 'SF', '판타지', '범죄', '액션', '모험', 
+            '미스터리', '애니메이션', '가족', '전쟁', '다큐멘터리', 
+            '리얼리티', '토크쇼', '서부', '뉴스', '역사', '로맨스', '정보 없음'
+        ]
+    
+    # 🎬 2. 영화 화면일 때 (영화 인기 장르 순서)
+    return [
+        '드라마', '코미디', '스릴러', '액션', '로맨스', '공포', '범죄', 
+        '미스터리', '모험', '다큐멘터리', 'SF', '가족', '판타지', 'TV 영화', 
+        '역사', '애니메이션', '음악', '전쟁', '서부', '정보 없음'
+    ]
 
-# 💡 [헬퍼 5] 필터 및 상세페이지용 OTT 아이콘 및 텍스트 매핑
+# 💡 [헬퍼 5] 필터 및 상세페이지용 OTT 아이콘 및 텍스트 매핑 (지정 순서 고정)
 def get_ott_list_with_logos(queryset):
-    # 💡 [속도 최적화] 가장 무거운 정규식 파싱 연산 캐싱 처리
-    query_hash = hashlib.md5(str(queryset.query).encode('utf-8')).hexdigest()
-    cache_key = f"otts_list_v1_{query_hash}"
-    cached_data = cache.get(cache_key)
-    if cached_data: return cached_data
-
-    ott_dict = {}
-    raw_data = queryset.exclude(tmdb_streaming_providers__isnull=True).exclude(tmdb_streaming_providers='').values_list('tmdb_streaming_providers', flat=True)
-    
-    for item in raw_data:
-        if not item: continue
-        text = str(item).replace("'", '"')
-        matches = re.findall(r'"(?:provider_name|name)":\s*"([^"]+)",\s*"logo_url":\s*"([^"]+)"', text)
+    return [
+        # 기존 국내 주요 OTT
+        {'id': 'Netflix', 'name': '넷플릭스', 'logo': ''},
+#        {'id': 'Netflix Standard with Ads', 'name': '넷플릭스 광고형', 'logo': ''},
+        {'id': 'Disney Plus', 'name': '디즈니+', 'logo': ''},
+        {'id': 'Wavve', 'name': '웨이브', 'logo': '/static/images/Wavve_icon.png'},
+        {'id': 'TVING', 'name': '티빙', 'logo': 'https://www.tving.com/favicon.ico'},
+        {'id': 'Watcha', 'name': '왓챠', 'logo': '/static/images/WATCHA_icon_Square.png'},
+        {'id': 'Apple TV Plus', 'name': '애플 TV+', 'logo': ''},
+        {'id': 'Amazon Prime Video', 'name': '아마존 프라임', 'logo': ''},
+        {'id': 'Coupang Play', 'name': '쿠팡플레이', 'logo': ''},
         
-        if matches:
-            for name, logo in matches:
-                name = name.strip()
-                if name and name not in ott_dict:
-                    if logo.startswith('/'): logo = f"https://image.tmdb.org/t/p/original{logo}"
-                    ott_dict[name] = logo
-        else:
-            if "{" not in text and "[" not in text:
-                splits = text.replace('/', ',').replace('|', ',').split(',')
-                for s in splits:
-                    name = s.strip()
-                    if name and name not in ['정보 없음', 'None'] and name not in ott_dict:
-                        ott_dict[name] = ""
-
-    custom_order = ['Netflix', 'netflix', 'Netflix Standard with Ads', 'netflix standard with ads', 'TVING', 'tving', 'Coupang Play', 'coupang play', 'Wavve', 'wavve', 'Disney Plus', 'disney plus', 'Disney+', 'disney+', 'Watcha', 'watcha', 'Apple TV', 'apple tv', 'Apple TV Plus', 'apple tv plus', 'Apple TV+', 'apple tv+', 'Amazon Prime Video', 'amazon prime video']
-    name_kr_map = {'Netflix': '넷플릭스', 'Netflix Standard with Ads': '넷플릭스 광고형', 'Disney Plus': '디즈니+', 'Disney+': '디즈니+', 'Wavve': '웨이브', 'wavve': '웨이브', 'TVING': '티빙', 'tving': '티빙', 'Watcha': '왓챠', 'watcha': '왓챠', 'Apple TV': '애플 TV+', 'Apple TV Plus': '애플 TV+', 'Apple TV+': '애플 TV+', 'Amazon Prime Video': '아마존 프라임', 'Coupang Play': '쿠팡플레이'}
-
-    result = []
-    for name, logo in ott_dict.items():
-        display_name = name_kr_map.get(name, name)
-        if name.lower() == 'tving': logo = "https://www.tving.com/favicon.ico"
-        elif name.lower() == 'watcha': logo = "/static/images/WATCHA_icon_Square.png" 
-        elif name.lower() == 'wavve': logo = "/static/images/Wavve_icon.png"
-        result.append({'id': name, 'name': display_name, 'logo': logo})
-        
-    result.sort(key=lambda x: custom_order.index(x['id']) if x['id'] in custom_order else 999)
-    cache.set(cache_key, result, timeout=86400) # 하루 동안 연산 프리패스
-    return result
+        # 추가된 해외/글로벌 OTT 플랫폼
+        {'id': 'Sun Nxt', 'name': 'Sun Nxt', 'logo': ''},
+        {'id': 'FilmBox+', 'name': 'FilmBox+', 'logo': ''},
+        {'id': 'MUBI', 'name': 'MUBI', 'logo': ''},
+        {'id': 'Bloodstream', 'name': 'Bloodstream', 'logo': ''},
+        {'id': 'Hoichoi', 'name': 'Hoichoi', 'logo': ''},
+        {'id': 'DocAlliance Films', 'name': 'DocAlliance Films', 'logo': ''},
+        {'id': 'Crunchyroll', 'name': '크런치롤', 'logo': ''},
+        {'id': 'KableOne', 'name': 'KableOne', 'logo': ''},
+        {'id': 'Dekkoo', 'name': 'Dekkoo', 'logo': ''},
+        {'id': 'Magellan TV', 'name': 'Magellan TV', 'logo': ''},
+        {'id': 'DOCSVILLE', 'name': 'DOCSVILLE', 'logo': ''},
+        {'id': 'Curiosity Stream', 'name': 'Curiosity Stream', 'logo': ''},
+    ]
 
 
 # ==============================================================================
@@ -1306,16 +1286,8 @@ def home(request):
         if selected_genres: country_base = country_base.filter(genre_queries)
         if selected_otts: country_base = country_base.filter(ott_queries)
         
-    raw_countries = country_base.values_list('tmdb_production_country_kr', flat=True)
-    country_set = set()
-    for c_str in raw_countries:
-        if not c_str or str(c_str).strip() in ['', 'None']: country_set.add('정보 없음')
-        else:
-            for c in str(c_str).split(','):
-                if c.strip(): country_set.add(c.strip())
-    custom_order = ['한국', '미국', '일본', '중국']
-    def sort_country(c): return custom_order.index(c) if c in custom_order else 999
-    countries_list = sorted(list(country_set), key=lambda x: (sort_country(x), x))
+    # 💡 5만개 스캔 방지: 인기 국가 강제 고정
+    countries_list = ['한국', '미국', '영국', '일본', '중국', '홍콩', '인도', '프랑스', '캐나다', '독일', '스페인', '벨기에', '호주', '이탈리아', '스웨덴', '아일랜드', '터키', '덴마크', '스위스', '노르웨이']
 
     base_rec_pool = common_movies
     if not search:
@@ -1555,16 +1527,8 @@ def rec_more_movies_view(request):
     if not search:
         if selected_genres: country_base = country_base.filter(genre_queries)
         if selected_otts: country_base = country_base.filter(ott_queries)
-    raw_countries = country_base.values_list('tmdb_production_country_kr', flat=True)
-    country_set = set()
-    for c_str in raw_countries:
-        if not c_str or str(c_str).strip() in ['', 'None']: country_set.add('정보 없음')
-        else:
-            for c in str(c_str).split(','):
-                if c.strip(): country_set.add(c.strip())
-    custom_order = ['한국', '미국', '일본', '중국']
-    def sort_country(c): return custom_order.index(c) if c in custom_order else 999
-    countries_list = sorted(list(country_set), key=lambda x: (sort_country(x), x))
+    # 💡 5만개 스캔 방지: 인기 국가 강제 고정
+    countries_list = ['한국', '미국', '영국', '일본', '중국', '홍콩', '인도', '프랑스', '캐나다', '독일', '스페인', '벨기에', '호주', '이탈리아', '스웨덴', '아일랜드', '터키', '덴마크', '스위스', '노르웨이']
 
     base_rec_pool = common_movies
     if not search:
@@ -1785,16 +1749,7 @@ def rec_more_tv_view(request):
     if not search:
         if selected_genres: country_base = country_base.filter(genre_queries)
         if selected_otts: country_base = country_base.filter(ott_queries)
-    raw_countries = country_base.values_list('tmdb_production_country_kr', flat=True)
-    country_set = set()
-    for c_str in raw_countries:
-        if not c_str or str(c_str).strip() in ['', 'None']: country_set.add('정보 없음')
-        else:
-            for c in str(c_str).split(','):
-                if c.strip(): country_set.add(c.strip())
-    custom_order = ['한국', '미국', '일본', '영국']
-    def sort_country(c): return custom_order.index(c) if c in custom_order else 999
-    countries_list = sorted(list(country_set), key=lambda x: (sort_country(x), x))
+    countries_list = ['한국', '미국', '영국', '일본', '중국', '홍콩', '인도', '프랑스', '캐나다', '독일', '스페인', '벨기에', '호주', '이탈리아', '스웨덴', '아일랜드', '터키', '덴마크', '스위스', '노르웨이']
 
     base_rec_pool = common_series
     if not search:
@@ -2166,15 +2121,7 @@ def all_list(request):
             {'id': 'Apple TV Plus', 'name': '애플 TV+', 'logo': ''},
         ]
 
-    country_set = set()
-    for c_str in master_qs.values_list('tmdb_production_country_kr', flat=True):
-        if not c_str or str(c_str).strip() in ['None', '', '정보 없음', '국가 미상']: country_set.add('정보 없음')
-        else:
-            for c in str(c_str).replace('/', ',').split(','):
-                clean_c = c.strip()
-                if clean_c: country_set.add(COUNTRY_KR_MAP.get(clean_c, clean_c))
-    custom_order = ['한국', '미국', '일본', '영국', '중국', '프랑스', '독일', '캐나다', '스페인', '대만', '홍콩']
-    countries_list = sorted(list(country_set), key=lambda x: (custom_order.index(x) if x in custom_order else 999, x))
+    countries_list = ['한국', '미국', '영국', '일본', '중국', '홍콩', '인도', '프랑스', '캐나다', '독일', '스페인', '벨기에', '호주', '이탈리아', '스웨덴', '아일랜드', '터키', '덴마크', '스위스', '노르웨이']
 
     # 4. 💡 8대 필터 파라미터 수신 (이 주석 아래부터 덮어쓰기!)
     selected_genres = request.GET.getlist('genres')
