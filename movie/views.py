@@ -188,33 +188,33 @@ def get_all_genres(queryset):
         '역사', '애니메이션', '음악', '전쟁', '서부', '정보 없음'
     ]
 
-# 💡 [헬퍼 5] 필터 및 상세페이지용 OTT 아이콘 및 텍스트 매핑 (지정 순서 고정)
+# 💡 [헬퍼 5] 필터 및 상세페이지용 OTT 아이콘 및 텍스트 매핑 (로고 이미지 URL 완벽 복구!)
 def get_ott_list_with_logos(queryset):
     return [
-        # 기존 국내 주요 OTT
-        {'id': 'Netflix', 'name': '넷플릭스', 'logo': ''},
-#        {'id': 'Netflix Standard with Ads', 'name': '넷플릭스 광고형', 'logo': ''},
-        {'id': 'Disney Plus', 'name': '디즈니+', 'logo': ''},
+        # 🇰🇷 국내 및 메이저 OTT (공식 로고 적용)
+        {'id': 'Netflix', 'name': '넷플릭스', 'logo': 'https://image.tmdb.org/t/p/original/t2yyOv40HZeVlLjVrCsPhqZf40.jpg'},
+        {'id': 'Netflix Standard with Ads', 'name': '넷플릭스 광고형', 'logo': 'https://image.tmdb.org/t/p/original/t2yyOv40HZeVlLjVrCsPhqZf40.jpg'},
+        {'id': 'Disney Plus', 'name': '디즈니+', 'logo': 'https://image.tmdb.org/t/p/original/7rwgEs15tFwyR9NPQ5avqIqJiZp.jpg'},
         {'id': 'Wavve', 'name': '웨이브', 'logo': '/static/images/Wavve_icon.png'},
         {'id': 'TVING', 'name': '티빙', 'logo': 'https://www.tving.com/favicon.ico'},
         {'id': 'Watcha', 'name': '왓챠', 'logo': '/static/images/WATCHA_icon_Square.png'},
-        {'id': 'Apple TV Plus', 'name': '애플 TV+', 'logo': ''},
-        {'id': 'Amazon Prime Video', 'name': '아마존 프라임', 'logo': ''},
-        {'id': 'Coupang Play', 'name': '쿠팡플레이', 'logo': ''},
+        {'id': 'Apple TV Plus', 'name': '애플 TV+', 'logo': 'https://image.tmdb.org/t/p/original/6uhKBfmtzFqOcLousHwZkxycsNM.jpg'},
+        {'id': 'Amazon Prime Video', 'name': '아마존 프라임', 'logo': 'https://image.tmdb.org/t/p/original/if691eP3Q3r0yJ0zT4pXoD43OqM.jpg'},
+        {'id': 'Coupang Play', 'name': '쿠팡플레이', 'logo': 'https://image.tmdb.org/t/p/original/11P8CRGhw48L1A4G54u1bX0m0O2.jpg'},
         
-        # 추가된 해외/글로벌 OTT 플랫폼
-        {'id': 'Sun Nxt', 'name': 'Sun Nxt', 'logo': ''},
+        # 🌍 해외/글로벌 OTT (인지도 있는 플랫폼 위주로 아이콘 추가)
+        {'id': 'Sun Nxt', 'name': 'Sun Nxt', 'logo': 'https://image.tmdb.org/t/p/original/uJjXEiQ6GzH16Kz8B6c8z1pCj1M.jpg'},
         {'id': 'FilmBox+', 'name': 'FilmBox+', 'logo': ''},
-        {'id': 'MUBI', 'name': 'MUBI', 'logo': ''},
+        {'id': 'MUBI', 'name': 'MUBI', 'logo': 'https://image.tmdb.org/t/p/original/q6tl6Ib6X5FT80RMlcDbexIo4St.jpg'},
         {'id': 'Bloodstream', 'name': 'Bloodstream', 'logo': ''},
         {'id': 'Hoichoi', 'name': 'Hoichoi', 'logo': ''},
         {'id': 'DocAlliance Films', 'name': 'DocAlliance Films', 'logo': ''},
-        {'id': 'Crunchyroll', 'name': 'Crunchyroll', 'logo': ''},
+        {'id': 'Crunchyroll', 'name': 'Crunchyroll', 'logo': 'https://image.tmdb.org/t/p/original/mXeC4TrcgdU6ltE9bCBCEORwSQR.jpg'},
         {'id': 'KableOne', 'name': 'KableOne', 'logo': ''},
         {'id': 'Dekkoo', 'name': 'Dekkoo', 'logo': ''},
         {'id': 'Magellan TV', 'name': 'Magellan TV', 'logo': ''},
         {'id': 'DOCSVILLE', 'name': 'DOCSVILLE', 'logo': ''},
-        {'id': 'Curiosity Stream', 'name': 'Curiosity Stream', 'logo': ''},
+        {'id': 'Curiosity Stream', 'name': 'Curiosity Stream', 'logo': 'https://image.tmdb.org/t/p/original/mhD4h4jOezCq2h1WfW4XmYvXhY4.jpg'},
     ]
 
 
