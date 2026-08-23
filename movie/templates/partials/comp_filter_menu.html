@@ -107,8 +107,8 @@
                 <div class="filter-grid collapsed" id="grid-country">
                     {% for country in countries_list %}
                         <label class="grid-item form-check bg-white rounded-3 p-2 m-0 border d-flex align-items-center shadow-sm" style="cursor: pointer;">
-                            <input class="form-check-input ms-1 me-2 m-0" type="checkbox" name="countries" value="{{ country }}" {% if country in selected_countries %}checked{% endif %}>
-                            <span class="small text-dark fw-medium" style="font-size: 13px;">{{ country }}</span>
+                            <input class="form-check-input ms-1 me-2 m-0" type="checkbox" name="countries" value="{{ country.id }}" {% if country.id in selected_countries %}checked{% endif %}>
+                            <span class="small text-dark fw-medium" style="font-size: 13px;">{{ country.name }}</span>
                         </label>
                     {% endfor %}
                 </div>
