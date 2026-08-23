@@ -137,7 +137,7 @@
                     </div>
                     -->
 
-                    <div class="form-check d-flex align-items-center" style="display: none;">
+                    <div class="form-check d-flex align-items-center" style="display: none !important;">
                         <input class="form-check-input m-0" type="checkbox" name="exclude_low_votes" id="exc-low-votes" value="on" style="width: 18px; height: 18px;" {% if filter_submitted != 'true' or exclude_low_votes %}checked{% endif %}>
                         <label class="form-check-label ms-2 small fw-medium text-dark" for="exc-low-votes">IMDb 평가 100개 미만 제외</label>
                     </div>
@@ -145,7 +145,7 @@
                         <input class="form-check-input m-0" type="checkbox" name="exclude_doc" id="exc-doc" value="on" style="width: 18px; height: 18px;" {% if filter_submitted != 'true' or exclude_doc %}checked{% endif %}>
                         <label class="form-check-label ms-2 small fw-medium text-dark" for="exc-doc">다큐멘터리 제외</label>
                     </div>
-                    <div class="form-check d-flex align-items-center" style="display: none;">
+                    <div class="form-check d-flex align-items-center" style="display: none !important;">
                         <input class="form-check-input m-0" type="checkbox" name="exclude_short" id="exc-short" value="on" style="width: 18px; height: 18px;" {% if filter_submitted != 'true' or exclude_short %}checked{% endif %}>
                         <label class="form-check-label ms-2 small fw-medium text-dark" for="exc-short">상영시간 60분 이하 제외</label>
                     </div>
