@@ -87,7 +87,7 @@
                         <!-- 💡 p-2를 py-2 px-1로 변경하여 좌우 여백 절반 축소 -->
                         <label class="grid-item form-check bg-white rounded-3 py-2 px-1 m-0 border d-flex align-items-center shadow-sm" style="cursor: pointer;">
                             <!-- 💡 체크박스 마진 축소 (ms-1 me-2 -> m-0 me-1) -->
-                            <input class="form-check-input m-0 me-1" type="checkbox" name="otts" value="{{ ott.id }}" {% if ott.id in selected_otts %}checked{% endif %}>
+                            <input class="form-check-input ms-1 me-2 m-0" type="checkbox" name="otts" value="{{ ott.id }}" {% if ott.id in selected_otts %}checked{% endif %}>
                             
                             {% if ott.id|lower == 'watcha' %}<img src="/static/images/WATCHA_icon_Square.png" style="width: 16px; height: 16px; border-radius: 4px; object-fit: cover;" alt="Watcha">
                             {% elif ott.id|lower == 'wavve' %}<img src="/static/images/Wavve_icon.png" style="width: 16px; height: 16px; border-radius: 4px; object-fit: cover;" alt="Wavve">
@@ -114,7 +114,7 @@
                     {% for genre in genres_list %}
                         <!-- 💡 py-2 px-1 좌우 여백 축소 -->
                         <label class="grid-item form-check bg-white rounded-3 py-2 px-1 m-0 border d-flex align-items-center shadow-sm" style="cursor: pointer;">
-                            <input class="form-check-input m-0 me-1 genre-cb" type="checkbox" name="genres" value="{{ genre }}" {% if genre in selected_genres %}checked{% endif %}>
+                            <input class="form-check-input ms-1 me-2 m-0 genre-cb" type="checkbox" name="genres" value="{{ genre }}" {% if genre in selected_genres %}checked{% endif %}>
                             <!-- 💡 text-nowrap 줄바꿈 방지 -->
                             <span class="small text-dark fw-medium text-nowrap" style="font-size: 12px; letter-spacing: -0.3px;">{{ genre }}</span>
                         </label>
@@ -133,7 +133,7 @@
                     {% for country in countries_list %}
                         <!-- 💡 py-2 px-1 좌우 여백 축소 -->
                         <label class="grid-item form-check bg-white rounded-3 py-2 px-1 m-0 border d-flex align-items-center shadow-sm" style="cursor: pointer;">
-                            <input class="form-check-input m-0 me-1" type="checkbox" name="countries" value="{{ country.id }}" {% if country.id in selected_countries %}checked{% endif %}>
+                            <input class="form-check-input ms-1 me-2 m-0" type="checkbox" name="countries" value="{{ country.id }}" {% if country.id in selected_countries %}checked{% endif %}>
                             <!-- 💡 국기 사이즈 미세 축소 (가로폭 확보) -->
                             <img src="{{ country.flag }}" alt="{{ country.name }}" style="width: 18px; height: 13px; object-fit: cover; border-radius: 2px; box-shadow: 0 0 1px rgba(0,0,0,0.3);">
                             <!-- 💡 text-nowrap으로 4글자(이탈리아, 아일랜드) 절대 줄바꿈 방지 -->
