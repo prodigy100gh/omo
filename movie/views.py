@@ -170,26 +170,28 @@ def get_display_runtime(tmdb_r, imdb_r):
         except (ValueError, TypeError): pass
     return 0
 
-# 💡 [헬퍼 4] 필터 드롭다운용 장르 리스트 (영화 / TV 분리형, 통계 기반 순서 고정)
-def get_all_genres(queryset):
+# 💡 [방어형 헬퍼 4] 필터 드롭다운용 장르 리스트 (어떤 페이지에서 호출해도 에러 0%)
+def get_all_genres(queryset=None):
+    try:
+        # 안전망: queryset이 존재하고 model 속성이 있을 때만 검사합니다.
+        if queryset is not None and hasattr(queryset, 'model') and queryset.model.__name__ == 'TvSeries':
+            return [
+                '드라마', '코미디', 'SF', '판타지', '범죄', '액션', '모험', 
+                '미스터리', '애니메이션', '가족', '전쟁', '다큐멘터리', 
+                '리얼리티', '토크쇼', '서부', '뉴스', '역사', '로맨스'
+            ]
+    except Exception:
+        pass
     
-    # 📺 1. TV 시리즈 화면일 때 (TV 시리즈 인기 장르 순서)
-    if queryset.model.__name__ == 'TvSeries':
-        return [
-            '드라마', '코미디', 'SF', '판타지', '범죄', '액션', '모험', 
-            '미스터리', '애니메이션', '가족', '전쟁', '다큐멘터리', 
-            '리얼리티', '토크쇼', '서부', '뉴스', '역사', '로맨스', '정보 없음'
-        ]
-    
-    # 🎬 2. 영화 화면일 때 (영화 인기 장르 순서)
+    # 🎬 기본 영화 화면일 때 (에러 시에도 무조건 반환)
     return [
         '드라마', '코미디', '스릴러', '액션', '로맨스', '공포', '범죄', 
         '미스터리', '모험', '다큐멘터리', 'SF', '가족', '판타지', 'TV 영화', 
-        '역사', '애니메이션', '음악', '전쟁', '서부', '정보 없음'
+        '역사', '애니메이션', '음악', '전쟁', '서부'
     ]
 
 # 💡 [헬퍼 5] 필터 및 상세페이지용 OTT 아이콘 및 텍스트 매핑 (구글 파비콘 API로 영구 고정!)
-def get_ott_list_with_logos(queryset):
+def get_ott_list_with_logos(queryset=None):
     return [
         # 🇰🇷 국내 및 메이저 OTT
         {'id': 'Netflix', 'name': '넷플릭스', 'logo': 'https://www.google.com/s2/favicons?domain=netflix.com&sz=128'},
@@ -251,8 +253,8 @@ def login_view(request):
             # 세션에서 원래 가려던 목적지를 꺼냄 (없으면 home)
             next_url = request.session.pop('next_url', 'home')
             
-            # 만약 기존 유저라도 평가 개수가 10개 미만이면 강제로 온보딩으로!
-            if user.ratings.count() < 10:
+            # 💡 [핵심 버그 수정] 에러가 나던 user.ratings를 안전한 방식인 Rating.objects.filter(user=user)로 교체!
+            if Rating.objects.filter(user=user).count() < 10:
                 return redirect('onboarding') 
             return redirect(next_url) 
     else:
