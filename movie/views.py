@@ -1405,7 +1405,7 @@ def rec_more_movies_view(request):
         # 💡 [핵심] 쿼리스트링을 떼어내고 깔끔한 주소로 리다이렉트하여 F5 새로고침 무한루프(API 과금) 방지!
         return redirect(request.path)
 
-    eval_count = Rating.objects.filter(user=user).count() if user else 0
+    eval_count = Rating.objects.filter(user=user, movie__isnull=False).count() if user else 0
     is_fallback = (eval_count < 10) if user else True
 
     search = request.GET.get('search', '')
@@ -1651,7 +1651,7 @@ def rec_more_tv_view(request):
         cache.delete(f"gemini_tv_fallback_v7_{user.id}")
         return redirect(request.path)
 
-    eval_count = Rating.objects.filter(user=user).count() if user else 0
+    eval_count = Rating.objects.filter(user=user, tvseries__isnull=False).count() if user else 0
     is_fallback = (eval_count < 10) if user else True
 
     search = request.GET.get('search', '')
