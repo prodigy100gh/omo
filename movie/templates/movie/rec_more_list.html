@@ -136,28 +136,7 @@
         {% endif %}
     </div>
 
-    <!-- 💡 메인 홈 화면과 100% 동일한 10편 평가 완료 스켈레톤 로딩 오버레이 -->
-    <div id="ai-more-loading-overlay" class="position-absolute bg-white d-none" style="top: 0; bottom: 0; left: 0; right: 0; z-index: 1000; padding: 10px 15px;">
-        <div class="container h-100 position-relative">
-            <div class="row row-cols-3 row-cols-sm-3 row-cols-md-4 row-cols-lg-5 g-1 h-100 pt-2">
-                {% for i in "1234567890" %}
-                <div class="col">
-                    <div style="display: flex; flex-direction: column; gap: 8px;">
-                        <div class="skeleton-ui" style="width: 100%; padding-top: 140%; border-radius: 12px;"></div>
-                        <div class="skeleton-ui" style="width: 80%; height: 16px; border-radius: 4px;"></div>
-                        <div class="skeleton-ui" style="width: 50%; height: 12px; border-radius: 4px;"></div>
-                        <div class="skeleton-ui" style="width: 100%; height: 30px; border-radius: 6px; margin-top: auto;"></div>
-                    </div>
-                </div>
-                {% endfor %}
-            </div>
-            <div class="position-absolute d-flex flex-column align-items-center justify-content-center w-100 h-100" style="top: 0; left: 0; background: linear-gradient(to bottom, rgba(255,255,255,0.4), rgba(255,255,255,0.95)); z-index: 10;">
-                <div class="spinner-grow text-primary mb-3" role="status" style="width: 3rem; height: 3rem; opacity: 0.85;"></div>
-                <h5 class="m-0 text-dark fw-bold" style="letter-spacing: -0.5px;">🎉 10편 평가 완료!</h5>
-                <p class="text-dark mt-1 fw-semibold" style="font-size: 14px;">AI가 회원님의 최신 취향을 반영하여 새로운 40편을 엄선 중입니다 ✨</p>
-            </div>
-        </div>
-    </div>
+
 </main>
 
 <!-- ================= [하단 고정 푸터 (심플 텍스트)] ================= -->
@@ -184,10 +163,21 @@ window.checkTenEvaluations = function() {
     });
 
     if (evalCount >= 10) {
-        const overlay = document.getElementById('ai-more-loading-overlay');
-        if (overlay) overlay.classList.remove('d-none');
-        
-        // 🚀 [핵심 수정] 새로고침할 때 백엔드에 강제 새로고침 신호를 파라미터로 붙여서 보냅니다!
+        // 💡 [핵심] 공통 로딩 오버레이(global-loading-overlay)를 찾아서 글자만 바꿔치기 합니다!
+        const globalOverlay = document.getElementById('global-loading-overlay');
+        if (globalOverlay) {
+            const title = globalOverlay.querySelector('.omo-loader-title');
+            const desc = globalOverlay.querySelector('.omo-loader-desc');
+            
+            // 글자 내용 변경
+            if (title) title.innerText = "🎉 10편 평가 완료!";
+            if (desc) desc.innerText = "AI가 회원님의 최신 취향을 반영하여 새로운 40편을 엄선 중입니다 ✨";
+            
+            // 💡 화면 전체를 덮는 공통 로딩창 띄우기 (스크롤, 화면 깨짐 완벽 해결!)
+            globalOverlay.classList.add('active');
+        }
+
+        // 🚀 새로고침할 때 백엔드에 강제 새로고침 신호를 파라미터로 붙여서 보냅니다!
         setTimeout(() => { 
             window.location.href = window.location.pathname + "?force_refresh=true"; 
         }, 1200);
