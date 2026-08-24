@@ -913,7 +913,7 @@ def api_gemini_recommendations(request):
                 others_candidates = list(pool_unseen.exclude(id__in=[m.id for m in kr_candidates + jp_candidates]).order_by('-imdb_vote_count')[:150])
                 fallback_40 = random.sample(kr_candidates, min(3, len(kr_candidates))) + random.sample(jp_candidates, min(2, len(jp_candidates))) + random.sample(others_candidates, min(35, len(others_candidates)))
                 cache.set(fallback_cache_key, [m.id for m in fallback_40], timeout=86400)
-                cached_pool = fallback_40
+            cached_pool = fallback_40
     else:
         cache_key_anon = "gemini_rec_master_pool_anon_v7"
         cached_anon_ids = cache.get(cache_key_anon)
