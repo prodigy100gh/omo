@@ -63,7 +63,7 @@
     </div>
     
     <!-- 💡 [핵심 해결] 컨테이너 ID도 TV 시리즈일 때는 'tv-scroll-container'로 분리! -->
-    <div class="recommended-scroll-container position-relative" id="{% if is_tv %}tv-scroll-container{% else %}recommended-scroll-container{% endif %}">
+    <div class="recommended-scroll-container position-relative" id="{% if is_tv %}tv-scroll-container{% else %}movie-scroll-container{% endif %}">
 	{% for movie in recommended_movies %}
             <!-- 💡 홈 화면과 100% 동일한 가로폭(width) 강제 고정 클래스 부여 -->
 	    <div class="recommended-item" style="flex: 0 0 auto; width: 145px;">
