@@ -34,15 +34,25 @@
             </div>
 
             <!-- ================= [2. 기간 슬라이더] ================= -->
-            <div class="filter-section mb-5">
+            <div class="filter-section mb-3"> <!-- 💡 mb-5를 mb-3으로 줄여서 아래 간격 축소 -->
                 <h6 class="fw-bold mb-3 ms-1">📅 기간</h6>
                 <div class="dual-slider-container" id="slider-period">
                     <div class="slider-track"></div>
                     <input type="range" name="period_min_idx" min="0" max="8" value="{{ request.GET.period_min_idx|default:'0' }}" id="period-min">
                     <input type="range" name="period_max_idx" min="0" max="8" value="{{ request.GET.period_max_idx|default:'8' }}" id="period-max">
                 </div>
-                <div class="d-flex justify-content-between text-muted mt-2 fw-bold px-1" style="font-size: 11px;">
-                    <span>15년↑</span><span>15년</span><span>10년</span><span>5년</span><span>3년</span><span>2년</span><span>1년</span><span>6개월</span><span>3개월</span>
+                
+                <!-- 💡 [핵심] justify-content-between 대신 % 절대 좌표 사용 -->
+                <div class="position-relative text-muted mt-2 fw-bold w-100" style="height: 20px; font-size: 11px;">
+                    <span style="position: absolute; left: 0%; transform: translateX(0%);">15년↑</span>
+                    <span style="position: absolute; left: 12.5%; transform: translateX(-50%);">15년</span>
+                    <span style="position: absolute; left: 25%; transform: translateX(-50%);">10년</span>
+                    <span style="position: absolute; left: 37.5%; transform: translateX(-50%);">5년</span>
+                    <span style="position: absolute; left: 50%; transform: translateX(-50%);">3년</span>
+                    <span style="position: absolute; left: 62.5%; transform: translateX(-50%);">2년</span>
+                    <span style="position: absolute; left: 75%; transform: translateX(-50%);">1년</span>
+                    <span style="position: absolute; left: 87.5%; transform: translateX(-50%);">6개월</span>
+                    <span style="position: absolute; left: 100%; transform: translateX(-100%);">3개월</span>
                 </div>
             </div>
 
@@ -60,7 +70,7 @@
             </div>
 
             <!-- ================= [4. OTT 선택] ================= -->
-            <div class="filter-section mb-5">
+            <div class="filter-section mb-3">
                 <div class="d-flex justify-content-between align-items-center mb-3 ms-1">
                     <h6 class="fw-bold mb-0">📺 스트리밍 (OTT)</h6>
                     <button type="button" class="btn btn-sm btn-link text-decoration-none text-muted fw-bold p-0 m-0 top-toggle-btn d-none" style="font-size: 12px;" data-target="grid-ott" onclick="toggleGrid('grid-ott')">- 접기</button>
@@ -81,15 +91,15 @@
             </div>
 
             <!-- ================= [5. 장르 선택] ================= -->
-            <div class="filter-section mb-5">
+            <div class="filter-section mb-3"> <!-- 💡 간격 축소 (mb-5 -> mb-3) -->
                 <div class="d-flex justify-content-between align-items-center mb-3 ms-1">
                     <h6 class="fw-bold mb-0">🎬 장르</h6>
                     <button type="button" class="btn btn-sm btn-link text-decoration-none text-muted fw-bold p-0 m-0 top-toggle-btn d-none" style="font-size: 12px;" data-target="grid-genre" onclick="toggleGrid('grid-genre')">- 접기</button>
                 </div>
-                <div class="filter-grid collapsed" id="grid-genre">
+                <!-- 💡 가로 3칸으로 촘촘하게 강제 지정 -->
+                <div class="filter-grid collapsed" id="grid-genre" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem;">
                     {% for genre in genres_list %}
                         <label class="grid-item form-check bg-white rounded-3 p-2 m-0 border d-flex align-items-center shadow-sm" style="cursor: pointer;">
-                            <!-- 💡 id 부여 (JS 연동용) -->
                             <input class="form-check-input ms-1 me-2 m-0 genre-cb" type="checkbox" name="genres" value="{{ genre }}" {% if genre in selected_genres %}checked{% endif %}>
                             <span class="small text-dark fw-medium" style="font-size: 13px;">{{ genre }}</span>
                         </label>
@@ -99,12 +109,13 @@
             </div>
 
             <!-- ================= [6. 국가 선택] ================= -->
-            <div class="filter-section mb-5">
+            <div class="filter-section mb-3"> <!-- 💡 간격 축소 (mb-5 -> mb-3) -->
                 <div class="d-flex justify-content-between align-items-center mb-3 ms-1">
                     <h6 class="fw-bold mb-0">🌍 국가</h6>
                     <button type="button" class="btn btn-sm btn-link text-decoration-none text-muted fw-bold p-0 m-0 top-toggle-btn d-none" style="font-size: 12px;" data-target="grid-country" onclick="toggleGrid('grid-country')">- 접기</button>
                 </div>
-                <div class="filter-grid collapsed" id="grid-country">
+                <!-- 💡 가로 3칸으로 촘촘하게 강제 지정 -->
+                <div class="filter-grid collapsed" id="grid-country" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem;">
                     {% for country in countries_list %}
                         <label class="grid-item form-check bg-white rounded-3 p-2 m-0 border d-flex align-items-center shadow-sm" style="cursor: pointer;">
                             <input class="form-check-input ms-1 me-2 m-0" type="checkbox" name="countries" value="{{ country.id }}" {% if country.id in selected_countries %}checked{% endif %}>
@@ -116,7 +127,7 @@
             </div>
 
             <!-- ================= [7. 제외 옵션] ================= -->
-            <div class="filter-section mb-4">
+            <div class="filter-section mb-3">
                 <h6 class="fw-bold mb-3 ms-1">🚫 제외 옵션</h6>
                 <div class="d-flex flex-column gap-2 ms-1">
                     <!-- 💡 value="true"를 value="on"으로 일괄 수정하여 백엔드 버그 완벽 차단! -->
