@@ -1193,11 +1193,6 @@ def api_gemini_tv_recommendations(request):
 # ==============================================================================
 # 💡 [초보자 안내] 홈페이지 메인 화면을 구성하는 뷰입니다.
 def home(request):
-# 🚨 [임시 관리자 생성 치트키] 아이디: admin / 비밀번호: 12345678
-    # 렌더 서버가 켜지고 누군가 메인 화면에 1번이라도 접속하면 자동으로 계정이 만들어집니다!
-    if not User.objects.filter(username='admin').exists():
-        User.objects.create_superuser('admin', '100', '100dbstjr!')
-
     user = request.user if request.user.is_authenticated else None
     eval_count = Rating.objects.filter(user=user).count() if user else 0
     is_fallback = (eval_count < 10) if user else True
