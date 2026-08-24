@@ -135,22 +135,6 @@
 
 
 
-
-    
-    <!-- 💡 테스트용 자동 로그인 세팅 (실제 서비스 배포 전에는 꼭 지워주세요!) -->
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const emailInput = document.getElementById('id_username');
-            const passwordInput = document.getElementById('id_password');
-            
-            if (emailInput && passwordInput) {
-                // 👇 본인이 자주 쓰는 테스트용 아이디와 비밀번호로 바꿔주세요!
-                emailInput.value = 'a@a.com'; 
-                passwordInput.value = '1';
-            }
-        });
-    </script>
-
 <!-- 💡 공통 로딩 오버레이 & 페이지 이동 딜레이 -->
     {% include 'partials/layout_loading_overlay.html' %}
 
