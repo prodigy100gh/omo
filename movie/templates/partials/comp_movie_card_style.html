@@ -37,19 +37,18 @@
         transition: all 0.2s ease;
     }
     
-    /* 🚀 2. 중간 압축 (11 ~ 12글자: 약간 홀쭉하게) */
-    .movie-title.title-long {
-        letter-spacing: -0.7px;
-        transform: scaleX(0.9);
-        width: 111%;
+    /* 📱 2. 모바일 가변 장평 (576px 미만: 11자 이상 / 13자 이상) */
+    @media (max-width: 575.98px) {
+        .movie-title.title-mo-long { letter-spacing: -0.7px; transform: scaleX(0.9); width: 111%; }
+        .movie-title.title-mo-xlong { letter-spacing: -1.0px; transform: scaleX(0.7); width: 142%; }
     }
 
-    /* 🚀 3. 최대 압축 (13글자 이상: 많이 홀쭉하게) */
-    .movie-title.title-xlong {
-        letter-spacing: -1.0px;
-        transform: scaleX(0.7);
-        width: 142%;
+    /* 💻 3. PC 가변 장평 (576px 이상: 15자 이상 / 20자 이상) */
+    @media (min-width: 576px) {
+        .movie-title.title-pc-long { letter-spacing: -0.7px; transform: scaleX(0.9); width: 111%; }
+        .movie-title.title-pc-xlong { letter-spacing: -1.0px; transform: scaleX(0.7); width: 142%; }
     }
+
     .movie-meta { font-size: 11px; color: #64748b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 0px; line-height: 1.1; }
     .rating-badge { font-size: 10px; font-weight: 700; padding: 2px 5px; border-radius: 4px; white-space: nowrap; }
     .bg-warning-subtle { background-color: rgba(245, 158, 11, 0.09) !important; color: #b45309 !important; }
