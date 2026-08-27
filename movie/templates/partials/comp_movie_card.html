@@ -44,7 +44,7 @@
         <div class="movie-info-wrap">
             <!-- 🚀 [가변 장평 적용] PC(15/20자)와 모바일(11/13자) 기준을 분리하여 기기별 압축 클래스를 동적 부여합니다 -->
             {% with t_len=movie.translated_title|length tmdb_len=movie.tmdb_title|length %}
-            <div class="movie-title {% if t_len > 19 or tmdb_len > 19 %}title-pc-xlong title-mo-xlong{% elif t_len > 14 or tmdb_len > 14 %}title-pc-long title-mo-xlong{% elif t_len > 12 or tmdb_len > 12 %}title-mo-xlong{% elif t_len > 10 or tmdb_len > 10 %}title-mo-long{% endif %}" title="{% if current_type != 'tv' and movie.translated_title and movie.translated_title != '힣 번역 불가' %}{{ movie.translated_title }}{% else %}{{ movie.tmdb_title }}{% endif %}">
+            <div class="movie-title {% if t_len > 19 or tmdb_len > 19 %}title-pc-xlong title-mo-xlong{% elif t_len > 14 or tmdb_len > 14 %}title-pc-long title-mo-xlong{% elif t_len > 11 or tmdb_len > 11 %}title-mo-xlong{% elif t_len > 9 or tmdb_len > 9 %}title-mo-long{% endif %}" title="{% if current_type != 'tv' and movie.translated_title and movie.translated_title != '힣 번역 불가' %}{{ movie.translated_title }}{% else %}{{ movie.tmdb_title }}{% endif %}">
                 {% if current_type != 'tv' and movie.translated_title and movie.translated_title != movie.tmdb_title and movie.translated_title != '힣 번역 불가' %}*{{ movie.translated_title }}{% else %}{{ movie.tmdb_title }}{% endif %}
             </div>
             {% endwith %}
