@@ -457,6 +457,36 @@
     }
   });
 
+// 💡 1. 필터 조건 100% 유지하며 "정렬"하기
+function applySort(sortValue) {
+    const urlParams = new URLSearchParams(window.location.search);
+    
+    if (sortValue) urlParams.set('sort', sortValue);
+    else urlParams.delete('sort');
+    
+    // 튕김 방지용 이름표 달아주기
+    if (!urlParams.has('type')) {
+        urlParams.set('type', '{{ current_type|default:"movie" }}');
+    }
+    
+    if (typeof showGlobalLoading === 'function') showGlobalLoading();
+    window.location.search = urlParams.toString();
+}
+
+// 💡 2. 필터 조건 100% 유지하며 "탭 전환(영화 <-> 시리즈)"하기
+function switchTab(tabType) {
+    const urlParams = new URLSearchParams(window.location.search);
+    
+    // 현재 필터 조건은 그대로 둔 채로 type(영화/TV)만 싹 바꿔치기!
+    urlParams.set('type', tabType);
+    
+    // 탭을 넘어가면 페이지는 1페이지로 초기화하는 것이 자연스러움
+    urlParams.delete('page');
+    
+    if (typeof showGlobalLoading === 'function') showGlobalLoading();
+    window.location.search = urlParams.toString();
+}
+
 </script>
 
 <!-- ================= [SECTION 12: 통합 로딩 오버레이 & 페이지 이동 효과] ================= -->
