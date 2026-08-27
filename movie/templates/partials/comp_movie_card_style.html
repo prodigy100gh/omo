@@ -37,13 +37,13 @@
         transition: all 0.2s ease;
     }
     
-    /* 📱 2. 모바일 가변 장평 (576px 미만: 11자 이상 / 13자 이상) */
+    /* 📱 2. 모바일 가변 장평 (576px 미만: 2단계 축소 적용) */
     @media (max-width: 575.98px) {
         .movie-title.title-mo-long { letter-spacing: -0.7px; transform: scaleX(0.9); width: 111%; }
         .movie-title.title-mo-xlong { letter-spacing: -1.0px; transform: scaleX(0.7); width: 142%; }
     }
 
-    /* 💻 3. PC 가변 장평 (576px 이상: 15자 이상 / 20자 이상) */
+    /* 💻 3. PC 가변 장평 (576px 이상: 2단계 축소 적용) */
     @media (min-width: 576px) {
         .movie-title.title-pc-long { letter-spacing: -0.7px; transform: scaleX(0.9); width: 111%; }
         .movie-title.title-pc-xlong { letter-spacing: -1.0px; transform: scaleX(0.7); width: 142%; }
