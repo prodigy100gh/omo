@@ -1637,6 +1637,7 @@ def rec_more_movies_view(request):
         'exclude_short': exclude_short, 'exclude_low_rating': exclude_low_rating, 'exclude_rated': exclude_rated,
         'exclude_unreleased': exclude_unreleased, 'exclude_no_imdb': exclude_no_imdb,
         'filter_submitted': 'true' if request.GET.get('filter_submitted') == 'true' else '',
+        'current_type': 'movie',  # 💡 [추가] 영화 쪽에도 확실하게 달아줍니다!
     })
 
 # 💡 [초보자 안내] 맞춤 AI TV 시리즈 추천 전체 보기 페이지
@@ -1883,6 +1884,7 @@ def rec_more_tv_view(request):
         'exclude_unreleased': exclude_unreleased, 'exclude_no_imdb': exclude_no_imdb,
         'filter_submitted': 'true' if request.GET.get('filter_submitted') == 'true' else '',
         'is_tv': True, 
+        'current_type': 'tv',  # 💡 [추가] 필터 메뉴가 시리즈임을 알 수 있게 이름표 부착!
     })
 
 # ==============================================================================
