@@ -51,13 +51,14 @@
 
     .movie-meta { font-size: 11px; color: #64748b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 0px; line-height: 1.1; }
     
-    /* 🚀 장르 텍스트만 개별적으로 90% 압축 */
-    .genre-compress {
-        display: inline-block;
-        transform: scaleX(0.9);
-        transform-origin: left center;
-        letter-spacing: -0.5px;
-        margin-right: -4px; /* 글자가 압축되면서 남은 오른쪽 빈 공간으로 국가명을 딱 맞게 당겨옵니다 */
+    /* 📱 14자 이상 출력 시 모바일 전용 전체 라인 압축 (PC 화면에서는 원본 유지) */
+    @media (max-width: 575.98px) {
+        .movie-meta.meta-line-compress-mo {
+            transform: scaleX(0.9);
+            transform-origin: left center;
+            width: 111%;
+            letter-spacing: -0.3px;
+        }
     }
 
     .rating-badge { font-size: 10px; font-weight: 700; padding: 2px 5px; border-radius: 4px; white-space: nowrap; }
