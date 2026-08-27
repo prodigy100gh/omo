@@ -2265,36 +2265,35 @@ def all_list(request):
     age_min_idx = int(request.GET.get('age_min_idx', '0'))
     age_max_idx = int(request.GET.get('age_max_idx', '3'))
 
-    # 💡 [핵심] 검색어가 없을 때만 제외 필터 및 선택 필터를 가동 (검색 시 풀이 잘려나가는 것 완벽 방지!)
+    # 💡 [핵심] 검색어가 없을 때만 제외 필터 및 선택 필터를 가동
     if not search_query:
-        if exclude_doc and hasattr(base_queryset.model, 'tmdb_genre'):
+        # 🚨 [버그 픽스] 오작동하던 hasattr() 체크를 싹 다 제거하여 시리즈 필터가 무시되던 현상 원천 차단!
+        if exclude_doc:
             base_queryset = base_queryset.exclude(Q(tmdb_genre__icontains='다큐') | Q(tmdb_genre__icontains='Documentary'))
-        if exclude_no_imdb and hasattr(base_queryset.model, 'imdb_rating'):
+        if exclude_no_imdb:
             base_queryset = base_queryset.exclude(Q(imdb_rating__isnull=True) | Q(imdb_rating=0))
-        if exclude_no_rating and hasattr(base_queryset.model, 'imdb_vote_count'):
+        if exclude_no_rating:
             base_queryset = base_queryset.exclude(Q(imdb_vote_count__isnull=True) | Q(imdb_vote_count=0))
-        if exclude_low_rating and hasattr(base_queryset.model, 'imdb_rating'):
+        if exclude_low_rating:
             base_queryset = base_queryset.filter(imdb_rating__gte=5.0)
-        if exclude_low_votes and hasattr(base_queryset.model, 'imdb_vote_count'):
+        if exclude_low_votes:
             min_votes = 30 if content_type == 'tv' else 100
             base_queryset = base_queryset.filter(imdb_vote_count__gte=min_votes)
         if exclude_unreleased:
             today_year = str(timezone.now().date())[:4]
             if content_type == 'tv':
-                if hasattr(base_queryset.model, 'first_air_date'): base_queryset = base_queryset.exclude(Q(first_air_date__isnull=True) | Q(first_air_date__gt=timezone.now().date()))
-                elif hasattr(base_queryset.model, 'imdb_release_date'): base_queryset = base_queryset.exclude(imdb_release_date__gt=today_year)
+                base_queryset = base_queryset.exclude(imdb_release_date__gt=today_year)
             else:
-                if hasattr(base_queryset.model, 'tmdb_release_date'): base_queryset = base_queryset.exclude(Q(tmdb_release_date__isnull=True) | Q(tmdb_release_date__gt=timezone.now().date()))
+                base_queryset = base_queryset.exclude(Q(tmdb_release_date__isnull=True) | Q(tmdb_release_date__gt=timezone.now().date()))
         if exclude_short:
             min_runtime = 15 if content_type == 'tv' else 60
-            if hasattr(base_queryset.model, 'tmdb_runtime'): base_queryset = base_queryset.exclude(Q(tmdb_runtime__gt=0, tmdb_runtime__lte=min_runtime))
-            elif hasattr(base_queryset.model, 'runtime'): base_queryset = base_queryset.exclude(Q(runtime__gt=0, runtime__lte=min_runtime))
+            base_queryset = base_queryset.exclude(Q(tmdb_runtime__gt=0, tmdb_runtime__lte=min_runtime))
         if exclude_rated and request.user.is_authenticated:
-            if content_type == 'tv' and hasattr(Rating, 'tvseries'): rated_ids = Rating.objects.filter(user=request.user, score__gt=0, tvseries__isnull=False).values_list('tvseries__id', flat=True)
+            if content_type == 'tv': rated_ids = Rating.objects.filter(user=request.user, score__gt=0, tvseries__isnull=False).values_list('tvseries__id', flat=True)
             else: rated_ids = Rating.objects.filter(user=request.user, score__gt=0, movie__isnull=False).values_list('movie__id', flat=True)
             base_queryset = base_queryset.exclude(id__in=rated_ids)
 
-        if selected_genres and hasattr(base_queryset.model, 'tmdb_genre'):
+        if selected_genres:
             genre_q = Q()
             for genre in selected_genres:
                 if genre == '정보 없음': genre_q |= (Q(tmdb_genre__isnull=True) | Q(tmdb_genre='') | Q(tmdb_genre='None') | Q(tmdb_genre='정보 없음'))
@@ -2303,16 +2302,16 @@ def all_list(request):
                     q = Q()
                     for syn in synonyms:
                         q |= Q(tmdb_genre__icontains=syn)
-                        if hasattr(base_queryset.model, 'imdb_genre'): q |= Q(imdb_genre__icontains=syn)
+                        q |= Q(imdb_genre__icontains=syn)
                     genre_q |= q
             base_queryset = base_queryset.filter(genre_q)
 
-        if selected_otts and hasattr(base_queryset.model, 'tmdb_streaming_providers'):
+        if selected_otts:
             ott_q = Q()
             for ott in selected_otts: ott_q |= Q(tmdb_streaming_providers__icontains=ott)
             base_queryset = base_queryset.filter(ott_q)
 
-        if selected_ratings and hasattr(base_queryset.model, 'tmdb_certification_kr'):
+        if selected_ratings:
             rating_q = Q()
             for r_val in selected_ratings:
                 if r_val == 'ALL': rating_q |= (Q(tmdb_certification_kr__in=['ALL', 'All', '전체', 'G']) | Q(tmdb_certification_kr__icontains='전체') | Q(tmdb_certification_us__in=['G', 'TV-G', 'TV-Y', 'TV-Y7']))
@@ -2322,7 +2321,7 @@ def all_list(request):
                 elif r_val == '정보 없음': rating_q |= (Q(tmdb_certification_kr__in=['', '정보 없음', '미등급', 'None']) | Q(tmdb_certification_kr__isnull=True))
             base_queryset = base_queryset.filter(rating_q)
 
-        if selected_countries and hasattr(base_queryset.model, 'tmdb_production_country_kr'):
+        if selected_countries:
             country_q = Q()
             for c in selected_countries:
                 if c == '정보 없음': country_q |= (Q(tmdb_production_country_kr__isnull=True) | Q(tmdb_production_country_kr='') | Q(tmdb_production_country_kr='None') | Q(tmdb_production_country_kr='정보 없음'))
@@ -2332,11 +2331,9 @@ def all_list(request):
                     sub_q = Q()
                     for tc in set(target_codes):
                         sub_q |= Q(tmdb_production_country_kr__icontains=tc)
-#                        if hasattr(base_queryset.model, 'tmdb_production_country_eng'): sub_q |= Q(tmdb_production_country_eng__icontains=tc)   #국가명으로 검색하지 않고 코드로만 반영
-                        if hasattr(base_queryset.model, 'tmdb_production_country_code'): sub_q |= Q(tmdb_production_country_code__icontains=tc)
+                        sub_q |= Q(tmdb_production_country_code__icontains=tc)
                     country_q |= sub_q
             base_queryset = base_queryset.filter(country_q)
-
 
         # =====================================================================
         # 💡 [수정] 1. 평점 슬라이더 필터 (0~10점, 0점은 무평점도 포함)
@@ -2346,13 +2343,10 @@ def all_list(request):
             r_max = float(rating_max)
             # 0~10 전체를 당긴 게 아닐 때만 작동!
             if r_min != 0.0 or r_max != 10.0:
-                if hasattr(base_queryset.model, 'imdb_rating'):
-                    rating_q = Q(imdb_rating__gte=r_min, imdb_rating__lte=r_max)
-                    # 💡 왼쪽 손잡이가 0점에 있으면, 아예 평점이 없는(Null) 작품도 0점으로 간주해 포함시킵니다!
-                    if r_min == 0.0:
-                        rating_q |= Q(imdb_rating__isnull=True)
-                        
-                    base_queryset = base_queryset.filter(rating_q)
+                rating_q = Q(imdb_rating__gte=r_min, imdb_rating__lte=r_max)
+                if r_min == 0.0:
+                    rating_q |= Q(imdb_rating__isnull=True)
+                base_queryset = base_queryset.filter(rating_q)
         except ValueError:
             pass
 
@@ -2365,10 +2359,7 @@ def all_list(request):
             start_date = now - timedelta(days=days_map[period_min_idx])
             end_date = now + timedelta(days=3650) if period_max_idx == 8 else now - timedelta(days=days_map[period_max_idx])
             
-            if content_type == 'tv' and hasattr(base_queryset.model, 'first_air_date'):
-                base_queryset = base_queryset.filter(first_air_date__range=[start_date, end_date])
-            elif hasattr(base_queryset.model, 'tmdb_release_date'):
-                base_queryset = base_queryset.filter(tmdb_release_date__range=[start_date, end_date])
+            base_queryset = base_queryset.filter(tmdb_release_date__range=[start_date, end_date])
 
         # =====================================================================
         # 💡 [추가] 3. 관람등급 슬라이더 필터 (US 오차 방어막 완벽 적용)
@@ -2377,59 +2368,51 @@ def all_list(request):
             age_map = ['ALL', '12', '15', '19']
             allowed_ratings = age_map[age_min_idx : age_max_idx + 1]
             
-            if hasattr(base_queryset.model, 'tmdb_certification_kr'):
-                rating_q = Q()
-                # 💡 [핵심 방어막] 한국 등급 정보가 완전히 비어있을 때만 미국 등급을 참고하도록 강제!
-                missing_kr = Q(tmdb_certification_kr__in=['', '정보 없음', '미등급', 'None']) | Q(tmdb_certification_kr__isnull=True)
-                
-                if 'ALL' in allowed_ratings:
-                    rating_q |= (Q(tmdb_certification_kr__in=['ALL', 'All', '전체', 'G']) | Q(tmdb_certification_kr__icontains='전체') | (missing_kr & Q(tmdb_certification_us__in=['G', 'TV-G', 'TV-Y', 'TV-Y7'])))
-                if '12' in allowed_ratings:
-                    rating_q |= (Q(tmdb_certification_kr__icontains='12') | (missing_kr & Q(tmdb_certification_us__in=['PG', 'TV-PG'])))
-                if '15' in allowed_ratings:
-                    rating_q |= (Q(tmdb_certification_kr__icontains='15') | (missing_kr & Q(tmdb_certification_us__in=['PG-13', 'TV-14'])))
-                if '19' in allowed_ratings:
-                    rating_q |= (Q(tmdb_certification_kr__icontains='18') | Q(tmdb_certification_kr__icontains='19') | Q(tmdb_certification_kr__icontains='청불') | (missing_kr & Q(tmdb_certification_us__in=['R', 'NC-17', 'TV-MA'])))
-                
-                base_queryset = base_queryset.filter(rating_q)
-
+            rating_q = Q()
+            missing_kr = Q(tmdb_certification_kr__in=['', '정보 없음', '미등급', 'None']) | Q(tmdb_certification_kr__isnull=True)
+            
+            if 'ALL' in allowed_ratings:
+                rating_q |= (Q(tmdb_certification_kr__in=['ALL', 'All', '전체', 'G']) | Q(tmdb_certification_kr__icontains='전체') | (missing_kr & Q(tmdb_certification_us__in=['G', 'TV-G', 'TV-Y', 'TV-Y7'])))
+            if '12' in allowed_ratings:
+                rating_q |= (Q(tmdb_certification_kr__icontains='12') | (missing_kr & Q(tmdb_certification_us__in=['PG', 'TV-PG'])))
+            if '15' in allowed_ratings:
+                rating_q |= (Q(tmdb_certification_kr__icontains='15') | (missing_kr & Q(tmdb_certification_us__in=['PG-13', 'TV-14'])))
+            if '19' in allowed_ratings:
+                rating_q |= (Q(tmdb_certification_kr__icontains='18') | Q(tmdb_certification_kr__icontains='19') | Q(tmdb_certification_kr__icontains='청불') | (missing_kr & Q(tmdb_certification_us__in=['R', 'NC-17', 'TV-MA'])))
+            
+            base_queryset = base_queryset.filter(rating_q)
 
     # 5. 💡 정렬 및 페이지네이션
     sort_by = request.GET.get('sort', 'votes_desc')
 
-    # 🚀 [추가됨] "내 평점순" 정렬 로직 (DB에서 직접 유저 평점 매핑 후 정렬)
+    # 🚀 "내 평점순" 정렬 로직 (DB에서 직접 유저 평점 매핑 후 정렬)
     if sort_by in ['my_desc', 'my_asc'] and request.user.is_authenticated:
         if content_type == 'tv':
             user_rating_subquery = Rating.objects.filter(user=request.user, tvseries__id=OuterRef('pk')).values('score')
         else:
             user_rating_subquery = Rating.objects.filter(user=request.user, movie__id=OuterRef('pk')).values('score')
             
-        # 로그인한 유저의 점수표를 가상(my_score_db)으로 붙여줍니다. (평가 안 했으면 0점)
         base_queryset = base_queryset.annotate(
             my_score_db=Coalesce(Subquery(user_rating_subquery[:1]), 0, output_field=IntegerField())
         )
         
         if sort_by == 'my_desc':
-            # 내 평점 높은 순 ▼
             base_queryset = base_queryset.order_by('-my_score_db', '-imdb_vote_count', '-id')
         else:
-            # 내 평점 낮은 순 ▲ (단, 0점인 미평가 작품들은 맨 뒤로 밀어내고 평가한 작품들만 줄세우기)
             base_queryset = base_queryset.annotate(
                 has_score=Case(When(my_score_db__gt=0, then=Value(1)), default=Value(0), output_field=IntegerField())
             ).order_by('-has_score', 'my_score_db', '-imdb_vote_count', '-id')
 
-    # 기존 정렬 로직 (IMDb 및 평가수)
+    # 기존 정렬 로직에서도 hasattr 제거
     else:
-        if sort_by == 'imdb_desc' and hasattr(base_queryset.model, 'imdb_rating'): 
+        if sort_by == 'imdb_desc': 
             base_queryset = base_queryset.order_by('-imdb_rating', '-imdb_vote_count', '-id')
-        elif sort_by == 'imdb_asc' and hasattr(base_queryset.model, 'imdb_rating'): 
+        elif sort_by == 'imdb_asc': 
             base_queryset = base_queryset.order_by('imdb_rating', '-imdb_vote_count', '-id')
-        elif sort_by == 'votes_asc' and hasattr(base_queryset.model, 'imdb_vote_count'): 
+        elif sort_by == 'votes_asc': 
             base_queryset = base_queryset.order_by('imdb_vote_count', '-id')
-        elif hasattr(base_queryset.model, 'imdb_vote_count'): 
-            base_queryset = base_queryset.order_by('-imdb_vote_count', '-id')
         else: 
-            base_queryset = base_queryset.order_by('-id')
+            base_queryset = base_queryset.order_by('-imdb_vote_count', '-id')
 
     # 💡 [복구 완료] 실수로 잘려나갔던 페이지 처리 부분 복구!
     paginator = Paginator(base_queryset, 15)
