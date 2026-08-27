@@ -62,7 +62,7 @@
                     {% else %}
                         {{ movie.display_year|default:"----" }}
                     {% endif %}
-                {% endif %}{% if movie.card_short_genre and movie.card_short_genre != "정보 없음" and movie.card_short_genre != "장르 없음" %}&nbsp;&nbsp;{{ movie.card_short_genre }}{% endif %}{% if movie.short_country and movie.short_country != "정보 없음" and movie.short_country != "None" and movie.short_country != "" %}&nbsp;&nbsp;{{ movie.short_country }}{% endif %}
+                {% endif %}{% if movie.card_short_genre and movie.card_short_genre != "정보 없음" and movie.card_short_genre != "장르 없음" %}&nbsp;&nbsp;<span class="{% if current_type == 'tv' or is_tv or '시리즈' in page_title %}{% if movie.card_short_genre|length >= 5 %}genre-compress{% endif %}{% endif %}">{{ movie.card_short_genre }}</span>{% endif %}{% if movie.short_country and movie.short_country != "정보 없음" and movie.short_country != "None" and movie.short_country != "" %}&nbsp;&nbsp;{{ movie.short_country }}{% endif %}
             </div>
 
             <div class="d-flex rating-badge-container" id="badge-container-{{ movie.id }}">
