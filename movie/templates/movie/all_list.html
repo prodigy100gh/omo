@@ -426,7 +426,6 @@
         clearBtn.addEventListener('click', () => {
           document.querySelectorAll(`#filter-form input[name="${nameStr}"]`).forEach((cb) => (cb.checked = false));
           updateFn();
-          document.getElementById('filter-form').submit();
         });
     };
 
@@ -446,7 +445,6 @@
       btnClearExclude.addEventListener('click', function () {
         ['excludeDocCheck', 'excludeNoRatingCheck', 'excludeLowVotesCheck', 'excludeShortCheck', 'excludeLowRatingCheck', 'excludeRatedCheck', 'excludeUnreleasedCheck', 'excludeNoImdbCheck'].forEach((id) => { const cb = document.getElementById(id); if (cb) cb.checked = false; });
         updateExcludeBadge();
-        document.getElementById('filter-form').submit();
       });
 
     // 지연 번역 실행
