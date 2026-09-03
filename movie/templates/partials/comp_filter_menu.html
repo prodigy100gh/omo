@@ -190,7 +190,8 @@
     <!-- 서랍 푸터 -->
     <div class="offcanvas-footer bg-light px-4 pt-3 border-top border-light-subtle shadow-lg" style="padding-bottom: 56px !important;">
         <div class="d-flex gap-2">
-            <a href="{% url 'all_list' %}?type={{ current_type|default:'movie' }}" class="btn btn-outline-secondary fw-bold py-2 rounded-3" style="width: 30%;">초기화</a>
+            <!-- 💡 a 태그를 삭제하고 button으로 변경하여 자동 새로고침을 원천 차단했습니다! -->
+            <button type="button" id="btn-reset-all-filters" class="btn btn-outline-secondary fw-bold py-2 rounded-3" style="width: 30%;">초기화</button>
             <button type="submit" form="unified-filter-form" class="btn btn-dark fw-bold py-2 rounded-3 shadow-sm" style="width: 70%; background-color: #0f172a;">필터 적용하기</button>
         </div>
     </div>
@@ -228,16 +229,39 @@
         initDualSlider('slider-period');
         initDualSlider('slider-age');
 
-        // 💡 [기능 추가] 다큐멘터리 장르 선택 시 제외 옵션 강제 해제 로직
+        // 다큐멘터리 장르 선택 시 제외 옵션 강제 해제 로직
         const genreCheckboxes = document.querySelectorAll('.genre-cb');
         const excludeDocCb = document.getElementById('exc-doc');
         genreCheckboxes.forEach(cb => {
             cb.addEventListener('change', function() {
                 if (this.value === '다큐멘터리' && this.checked && excludeDocCb) {
-                    excludeDocCb.checked = false; // 다큐 제외 스위치를 강제로 끕니다!
+                    excludeDocCb.checked = false; 
                 }
             });
         });
+
+        // 💡 [추가] 초기화 버튼 누르면 화면 이동 없이 스위치와 슬라이더만 0으로 원상복구!
+        const resetBtnAll = document.getElementById('btn-reset-all-filters');
+        if (resetBtnAll) {
+            resetBtnAll.addEventListener('click', function() {
+                // 1. 체크박스 싹 다 해제하고 뱃지 0으로 업데이트
+                document.querySelectorAll('#unified-filter-form input[type="checkbox"]').forEach(cb => {
+                    cb.checked = false;
+                    cb.dispatchEvent(new Event('change'));
+                });
+                
+                // 2. 슬라이더를 기본값으로 되돌림
+                const sliders = [
+                    { id: 'rating-min', val: 0 }, { id: 'rating-max', val: 10 },
+                    { id: 'period-min', val: 0 }, { id: 'period-max', val: 8 },
+                    { id: 'age-min', val: 0 }, { id: 'age-max', val: 3 }
+                ];
+                sliders.forEach(s => {
+                    const el = document.getElementById(s.id);
+                    if (el) { el.value = s.val; el.dispatchEvent(new Event('input')); }
+                });
+            });
+        }
     });
 
     function initDualSlider(containerId) {
@@ -260,7 +284,6 @@
             const maxPercent = ((maxVal - maxSlider.min) / (maxSlider.max - maxSlider.min)) * 100;
             track.style.background = `linear-gradient(to right, #e2e8f0 ${minPercent}%, #0f172a ${minPercent}%, #0f172a ${maxPercent}%, #e2e8f0 ${maxPercent}%)`;
 
-            // Z-index 교정 로직 (뭉침 풀기)
             if (maxVal === parseInt(maxSlider.max)) {
                 minSlider.style.zIndex = "3"; maxSlider.style.zIndex = "2";
             } else {
