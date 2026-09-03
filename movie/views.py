@@ -1975,140 +1975,11 @@ def all_list(request):
             q_clean_syn
         ]))
 
-    # 브라우저가 '실시간 검색'을 요청하면 HTML 페이지 대신 순수 데이터만 즉시 반환합니다.
     # =========================================================
-    # 🚀 [초고속 모드] 실시간 검색창 팝업 로직 (구시간 탈출!)
+    # 🚀 [완전 삭제 모드] 실시간 검색창 팝업 무력화
     # =========================================================
     if request.GET.get('live_search') == 'true':
-        if not search_query:
-            return JsonResponse({'results': [], 'movie_count': 0, 'tv_count': 0, 'people_count': 0})
-        
-        # 💡 [캐싱] 로직이 바뀌었으니 캐시를 v5로 격상시킵니다!
-        cache_key = f"live_search_v5_{search_query}"
-        cached_response = cache.get(cache_key)
-        if cached_response:
-            return JsonResponse(cached_response)
-        
-        # 🚀 [핵심 최적화] 무거운 iregex 대신 엄청나게 가벼운 icontains 사용!
-        m_cond_live = Q()
-        t_cond_live = Q()
-        
-        for term in live_search_terms:
-            if not term: continue
-            
-            # 영화 스캔
-            m_cond_live |= Q(tmdb_title__icontains=term) | Q(tmdb_original_title__icontains=term) | Q(tmdb_actors__icontains=term) | Q(tmdb_director__icontains=term)
-            if hasattr(Movie, 'translated_title'): m_cond_live |= Q(translated_title__icontains=term)
-            if hasattr(Movie, 'tmdb_actor_details'): m_cond_live |= Q(tmdb_actor_details__icontains=term)
-            
-            # 시리즈 스캔
-            t_cond_live |= Q(tmdb_title__icontains=term) | Q(tmdb_original_title__icontains=term) | Q(tmdb_actors__icontains=term) | Q(tmdb_director__icontains=term)
-            if hasattr(TvSeries, 'translated_title'): t_cond_live |= Q(translated_title__icontains=term)
-            if hasattr(TvSeries, 'tmdb_actor_details'): t_cond_live |= Q(tmdb_actor_details__icontains=term)
-        
-        m_qs = Movie.objects.filter(m_cond_live).order_by('-imdb_vote_count', '-id')
-        m_count = m_qs.count()
-        top_movies = list(m_qs[:5])
-
-        t_qs = TvSeries.objects.filter(t_cond_live).order_by('-imdb_vote_count', '-id')
-        t_count = t_qs.count()
-        top_series = list(t_qs[:5])
-
-        # 3. 인물(배우/감독/각본가) 검색 로직
-        matched_people = {}
-        def extract_people(queryset):
-            # 🚀 [핵심] 상위 대작 50개만 스캔하여 속도 쾌속 + 인지도순 탐색
-            for item in queryset[:50]: 
-                item_votes = getattr(item, 'imdb_vote_count', 0) or 0
-                
-                # 🎭 [배우 찾기]
-                actors = getattr(item, 'tmdb_actor_details', [])
-                if isinstance(actors, str):
-                    try: actors = json.loads(actors)
-                    except Exception: actors = []
-                if isinstance(actors, list):
-                    for actor in actors:
-                        actor_name = str(actor.get('name', '')).replace(' ', '').lower()
-                        actor_original = str(actor.get('original_name', '')).replace(' ', '').lower()
-                        
-                        # 🚀 [핵심] 원본어(cruise)와 치환어(크루즈) 중 하나라도 걸리면 무조건 캐치!
-                        if any(kw in actor_name or (kw and kw in actor_original) for kw in search_keywords):
-                            pid = actor.get('id')
-                            if pid:
-                                if pid not in matched_people:
-                                    matched_people[pid] = {'id': pid, 'name': actor.get('name'), 'profile_url': actor.get('profile_url', ''), 'type': '배우', 'score': 0}
-                                matched_people[pid]['score'] += item_votes
-                
-                # 🎬 [감독 찾기]
-                director = str(getattr(item, 'tmdb_director', '') or '')
-                dir_clean = director.replace(' ', '').lower()
-                if any(kw in dir_clean for kw in search_keywords):
-                    did = getattr(item, 'tmdb_director_id', None)
-                    if did:
-                        if did not in matched_people:
-                            matched_people[did] = {'id': did, 'name': director, 'profile_url': getattr(item, 'tmdb_director_image_url', ''), 'type': '감독', 'score': 0}
-                        matched_people[did]['score'] += item_votes
-                
-                # ✍️ [각본가 찾기]
-                writer = str(getattr(item, 'tmdb_screenwriter', '') or '')
-                wrt_clean = writer.replace(' ', '').lower()
-                if any(kw in wrt_clean for kw in search_keywords):
-                    wid = getattr(item, 'tmdb_screenwriter_id', None)
-                    if wid:
-                        if wid not in matched_people:
-                            matched_people[wid] = {'id': wid, 'name': writer, 'profile_url': '', 'type': '각본가', 'score': 0}
-                        matched_people[wid]['score'] += item_votes
-
-        extract_people(m_qs)
-        extract_people(t_qs)
-        
-        # 🚀 [업그레이드] 투표수 합산 점수(score) 기준으로 내림차순 정렬 후 컷!
-        sorted_people = sorted(matched_people.values(), key=lambda x: x['score'], reverse=True)
-        max_people = 3 if len(search_query) == 1 else 5
-        people_list = sorted_people[:max_people]
-
-        # 4. 결과 통합 (인물은 상단 배치)
-        combined = []
-        for p in people_list:
-            combined.append({
-                'id': p['id'], 'type': 'person', 'type_label': p['type'], 'color': '#ec4899', 
-                'title': p['name'], 'year': '', 'votes': 9999999, 
-                'img': p['profile_url']
-            })
-        for m in top_movies:
-            combined.append({
-                'id': m.id, 'type': 'movie', 'type_label': '영화', 'color': '#0d6efd',
-                'title': getattr(m, 'tmdb_title', ''),
-                'year': str(getattr(m, 'tmdb_release_date', ''))[:4] if getattr(m, 'tmdb_release_date', None) else '연도미상',
-                'votes': getattr(m, 'imdb_vote_count', 0) or 0,
-                'img': getattr(m, 'tmdb_poster_url', '') or ''
-            })
-        for s in top_series:
-            release_val = getattr(s, 'tmdb_release_date', getattr(s, 'first_air_date', None))
-            combined.append({
-                'id': s.id, 'type': 'tv', 'type_label': '시리즈', 'color': '#10b981',
-                'title': getattr(s, 'tmdb_title', ''),
-                'year': str(release_val)[:4] if release_val else '연도미상',
-                'votes': getattr(s, 'imdb_vote_count', 0) or 0,
-                'img': getattr(s, 'tmdb_poster_url', getattr(s, 'poster_url', '')) or ''
-            })
-        
-        combined.sort(key=lambda x: x['votes'], reverse=True)
-
-        # 🚀 [핵심 2] 허용된 인물 수(3 or 5) + 고정 작품 수(5) = 총 8개 또는 10개만 리턴!
-        max_results = max_people + 5
-
-        final_response_data = {
-            'results': combined[:max_results],
-            'movie_count': m_count,
-            'tv_count': t_count,
-            'people_count': len(matched_people)
-        }
-
-        # 💡 [캐시 저장] 찾은 결과를 메모리에 1시간 보관
-        cache.set(cache_key, final_response_data, timeout=3600)
-
-        return JsonResponse(final_response_data)
+        return JsonResponse({'results': [], 'movie_count': 0, 'tv_count': 0, 'people_count': 0})
 
 
     # 🚀 [핵심 1] 스마트 자동 탭 전환 로직 (엔터 치고 전체 결과로 넘어갔을 때)
@@ -3686,16 +3557,8 @@ def search_results(request):
     regex_orig = r'\s*'.join(re.escape(char) for char in q_clean_orig)
     synonyms = {
         # 🦸‍♂️ 프랜차이즈 / 영화 제목 오타 방어
-        '어벤져스': '어벤저스',
-        '베트맨': '배트맨',
-        '수퍼맨': '슈퍼맨',
-        '에일리언': '에이리언',
-        '주라기': '쥬라기',
-        '케리비안': '캐리비안',
-        '인디애나': '인디아나',
-        '메트릭스': '매트릭스',
-        '터미네타': '터미네이터',
-        '스타트랙': '스타트렉',
+        '어벤져스': '어벤저스', '베트맨': '배트맨', '수퍼맨': '슈퍼맨', '에일리언': '에이리언', '주라기': '쥬라기',
+        '케리비안': '캐리비안', '인디애나': '인디아나', '메트릭스': '매트릭스', '터미네타': '터미네이터', '스타트랙': '스타트렉',
 
         # 👤 해외 배우/감독 이름 방어 (띄어쓰기, 붙여쓰기 모두 대비)
         '탐 크루즈': '톰 크루즈', '탐크루즈': '톰크루즈',
@@ -3707,18 +3570,12 @@ def search_results(request):
         '엔젤리나 졸리': '안젤리나 졸리', '엔젤리나졸리': '안젤리나졸리',
         
         # (이름의 일부만 쓰여도 안전한 고유명사들)
-        '레오날도': '레오나르도',  # 레오날도 디카프리오
-        '조한슨': '요한슨',      # 스칼렛 조한슨 -> 스칼렛 요한슨
-        '슈왈츠제네거': '슈워제네거', '슈왈제네거': '슈워제네거',
-        '카메룬': '카메론',      # 제임스 카메룬 -> 카메론 (아바타 감독)
-        '놀런': '놀란',        # 크리스토퍼 놀런 -> 크리스토퍼 놀란
-        '질렌홀': '질렌할',      # 제이크 질렌홀 -> 질렌할
-        '펠트로': '팰트로',      # 기네스 펠트로 -> 팰트로
-
+        '레오날도': '레오나르도', '조한슨': '요한슨', '슈왈츠제네거': '슈워제네거', '슈왈제네거': '슈워제네거', '카메룬': '카메론', 
+        '놀런': '놀란', '질렌홀': '질렌할', '펠트로': '팰트로',
+        
         # 🚀 [핵심 추가] 팝업과 동일하게 영어 검색어 치환
         'cruise': '크루즈', 'tom': '톰', 'brad': '브래드', 'pitt': '피트', 
-        'spider': '스파이더', 'man': '맨', 'batman': '배트맨', 'superman': '슈퍼맨',
-        'iron': '아이언'
+        'spider': '스파이더', 'man': '맨', 'batman': '배트맨', 'superman': '슈퍼맨', 'iron': '아이언'
     }
     
     processed_query = query.lower()
@@ -3737,32 +3594,33 @@ def search_results(request):
         search_keywords = [q_clean_orig]
 
     # =========================================================
-    # 🚀 2. 작품 검색 (DB 스캔)
+    # 🚀 2. 작품 검색 (DB 스캔 최적화 - '제목'만 스캔)
     # =========================================================
     m_cond = Q(tmdb_title__iregex=regex_str)
     if hasattr(Movie, 'translated_title'): m_cond |= Q(translated_title__iregex=regex_str)
     if hasattr(Movie, 'tmdb_original_title'): m_cond |= Q(tmdb_original_title__iregex=regex_str)
-    if hasattr(Movie, 'tmdb_actors'): m_cond |= Q(tmdb_actors__iregex=regex_str)
-    if hasattr(Movie, 'tmdb_actor_details'): m_cond |= Q(tmdb_actor_details__iregex=regex_str)
-    if hasattr(Movie, 'tmdb_director'): m_cond |= Q(tmdb_director__iregex=regex_str)
-
+    
     t_cond = Q(tmdb_title__iregex=regex_str)
     if hasattr(TvSeries, 'translated_title'): t_cond |= Q(translated_title__iregex=regex_str)
     if hasattr(TvSeries, 'tmdb_original_title'): t_cond |= Q(tmdb_original_title__iregex=regex_str)
-    if hasattr(TvSeries, 'tmdb_actors'): t_cond |= Q(tmdb_actors__iregex=regex_str)
-    if hasattr(TvSeries, 'tmdb_actor_details'): t_cond |= Q(tmdb_actor_details__iregex=regex_str)
-    if hasattr(TvSeries, 'tmdb_director'): t_cond |= Q(tmdb_director__iregex=regex_str)
-    
+
     movies = Movie.objects.filter(m_cond).order_by('-imdb_vote_count', '-id')
     tv_series = TvSeries.objects.filter(t_cond).order_by('-imdb_vote_count', '-id')
     
     # =========================================================
-    # 🚀 3. 인물 추출 (JSON 스캔)
+    # 🚀 3. 인물 검색 전용 스캔 (가벼운 icontains 사용)
     # =========================================================
+    m_cond_person = Q()
+    t_cond_person = Q()
+    for kw in search_keywords:
+        if kw:
+            m_cond_person |= Q(tmdb_actors__icontains=kw) | Q(tmdb_director__icontains=kw)
+            t_cond_person |= Q(tmdb_actors__icontains=kw) | Q(tmdb_director__icontains=kw)
+
     matched_people = {}
 
     def extract_people_from_queryset(queryset):
-        for item in queryset[:50]:
+        for item in queryset:
             item_votes = getattr(item, 'imdb_vote_count', 0) or 0
             
             actors = getattr(item, 'tmdb_actor_details', [])
@@ -3800,8 +3658,9 @@ def search_results(request):
                         matched_people[wrt_id] = {'id': wrt_id, 'name': writer_name, 'profile_url': '', 'type': '각본가', 'score': 0}
                     matched_people[wrt_id]['score'] += item_votes
 
-    extract_people_from_queryset(movies)
-    extract_people_from_queryset(tv_series)
+    # 💡 무거운 JSON 스캔은 상위 30개의 영화/시리즈에서만 빠르게 끝냅니다.
+    extract_people_from_queryset(Movie.objects.filter(m_cond_person).order_by('-imdb_vote_count')[:30])
+    extract_people_from_queryset(TvSeries.objects.filter(t_cond_person).order_by('-imdb_vote_count')[:30])
 
     sorted_people = sorted(matched_people.values(), key=lambda x: x['score'], reverse=True)
 
@@ -3813,7 +3672,6 @@ def search_results(request):
     }
     
     return render(request, 'search_results.html', context)
-
 
 
 def my_taste_analysis(request):
