@@ -18,16 +18,18 @@
             <input type="hidden" name="sort" value="{{ sort_by|default:'votes_desc' }}">
             {% if search_query %}<input type="hidden" name="search" value="{{ search_query }}">{% endif %}
             
-            <!-- ================= [1. 평점 슬라이더] ================= -->
+            <!-- ================= [1. 평점 슬라이더 (0 눈금 부활)] ================= -->
             <div class="filter-section mb-5">
                 <h6 class="fw-bold mb-3 ms-1">⭐ 평점</h6>
                 <div class="dual-slider-container" id="slider-rating">
                     <div class="slider-track"></div>
-                    <input type="range" name="rating_min" min="1" max="10" value="{{ request.GET.rating_min|default:'1' }}" id="rating-min">
-                    <input type="range" name="rating_max" min="1" max="10" value="{{ request.GET.rating_max|default:'10' }}" id="rating-max">
+                    <!-- 💡 min="0"으로 복구하되, 디폴트 시작 위치는 '1'로 유지! -->
+                    <input type="range" name="rating_min" min="0" max="10" value="{{ request.GET.rating_min|default:'1' }}" id="rating-min">
+                    <input type="range" name="rating_max" min="0" max="10" value="{{ request.GET.rating_max|default:'10' }}" id="rating-max">
                 </div>
+                <!-- 💡 0 눈금 복구! -->
                 <div class="d-flex justify-content-between text-muted mt-2 fw-bold px-1" style="font-size: 12px;">
-                    <span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span>
+                    <span>0</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span>
                 </div>
             </div>
 
