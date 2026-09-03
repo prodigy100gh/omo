@@ -18,18 +18,16 @@
             <input type="hidden" name="sort" value="{{ sort_by|default:'votes_desc' }}">
             {% if search_query %}<input type="hidden" name="search" value="{{ search_query }}">{% endif %}
             
-            <!-- ================= [1. 평점 슬라이더 (0~10 추가)] ================= -->
+            <!-- ================= [1. 평점 슬라이더] ================= -->
             <div class="filter-section mb-5">
                 <h6 class="fw-bold mb-3 ms-1">⭐ 평점</h6>
                 <div class="dual-slider-container" id="slider-rating">
                     <div class="slider-track"></div>
-                    <!-- 💡 0을 추가하고 초기 디폴트는 1~10으로 셋팅! -->
-                    <input type="range" name="rating_min" min="0" max="10" value="{{ request.GET.rating_min|default:'1' }}" id="rating-min">
-                    <input type="range" name="rating_max" min="0" max="10" value="{{ request.GET.rating_max|default:'10' }}" id="rating-max">
+                    <input type="range" name="rating_min" min="1" max="10" value="{{ request.GET.rating_min|default:'1' }}" id="rating-min">
+                    <input type="range" name="rating_max" min="1" max="10" value="{{ request.GET.rating_max|default:'10' }}" id="rating-max">
                 </div>
-                <!-- 💡 0이 추가된 눈금! -->
                 <div class="d-flex justify-content-between text-muted mt-2 fw-bold px-1" style="font-size: 12px;">
-                    <span>0</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span>
+                    <span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span>
                 </div>
             </div>
 
@@ -234,13 +232,11 @@
         const excludeDocCb = document.getElementById('exc-doc');
         genreCheckboxes.forEach(cb => {
             cb.addEventListener('change', function() {
-                if (this.value === '다큐멘터리' && this.checked && excludeDocCb) {
-                    excludeDocCb.checked = false; 
-                }
+                if (this.value === '다큐멘터리' && this.checked && excludeDocCb) { excludeDocCb.checked = false; }
             });
         });
 
-        // 💡 [추가] 초기화 버튼 누르면 화면 이동 없이 스위치와 슬라이더만 0으로 원상복구!
+        // 💡 [추가] 초기화 버튼 누르면 화면 이동 없이 스위치와 슬라이더만 원상복구!
         const resetBtnAll = document.getElementById('btn-reset-all-filters');
         if (resetBtnAll) {
             resetBtnAll.addEventListener('click', function() {
@@ -250,9 +246,9 @@
                     cb.dispatchEvent(new Event('change'));
                 });
                 
-                // 2. 슬라이더를 기본값으로 되돌림
+                // 2. 💡 슬라이더 기본값 세팅 (평점 최소값을 디폴트인 1로 돌려놓습니다!)
                 const sliders = [
-                    { id: 'rating-min', val: 0 }, { id: 'rating-max', val: 10 },
+                    { id: 'rating-min', val: 1 }, { id: 'rating-max', val: 10 },
                     { id: 'period-min', val: 0 }, { id: 'period-max', val: 8 },
                     { id: 'age-min', val: 0 }, { id: 'age-max', val: 3 }
                 ];
