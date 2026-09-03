@@ -407,24 +407,18 @@
       if (clearBtn) { clearBtn.disabled = count === 0; }
     }
 
-    const updateExcludeBadge = () => {
-      const cbIds = ['excludeDocCheck', 'excludeNoRatingCheck', 'excludeLowVotesCheck', 'excludeShortCheck', 'excludeLowRatingCheck', 'excludeRatedCheck', 'excludeUnreleasedCheck', 'excludeNoImdbCheck'];
-      let count = 0;
-      cbIds.forEach((id) => { const cb = document.getElementById(id); if (cb && cb.checked) count++; });
-      initBadge('exclude-badge', 'btn-clear-exclude', count);
-    };
-
     const setupFilterBadge = (nameStr, badgeId, btnId) => {
       const updateFn = () => {
-        const count = document.querySelectorAll(`#filter-form input[name="${nameStr}"]:checked`).length;
+        // 💡 [핵심 수정] #filter-form -> #unified-filter-form 으로 교체 완료!
+        const count = document.querySelectorAll(`#unified-filter-form input[name="${nameStr}"]:checked`).length;
         initBadge(badgeId, btnId, count);
       };
       updateFn();
-      document.querySelectorAll(`#filter-form input[name="${nameStr}"]`).forEach((cb) => cb.addEventListener('change', updateFn));
+      document.querySelectorAll(`#unified-filter-form input[name="${nameStr}"]`).forEach((cb) => cb.addEventListener('change', updateFn));
       const clearBtn = document.getElementById(btnId);
       if (clearBtn)
         clearBtn.addEventListener('click', () => {
-          document.querySelectorAll(`#filter-form input[name="${nameStr}"]`).forEach((cb) => (cb.checked = false));
+          document.querySelectorAll(`#unified-filter-form input[name="${nameStr}"]`).forEach((cb) => (cb.checked = false));
           updateFn();
         });
     };
@@ -434,18 +428,7 @@
     setupFilterBadge('ratings', 'rating-badge', 'btn-clear-rating');
     setupFilterBadge('countries', 'country-badge', 'btn-clear-country');
     
-    updateExcludeBadge();
-    ['excludeDocCheck', 'excludeNoRatingCheck', 'excludeLowVotesCheck', 'excludeShortCheck', 'excludeLowRatingCheck', 'excludeRatedCheck', 'excludeUnreleasedCheck', 'excludeNoImdbCheck'].forEach((id) => {
-      const cb = document.getElementById(id);
-      if (cb) cb.addEventListener('change', updateExcludeBadge);
-    });
-
-    const btnClearExclude = document.getElementById('btn-clear-exclude');
-    if (btnClearExclude)
-      btnClearExclude.addEventListener('click', function () {
-        ['excludeDocCheck', 'excludeNoRatingCheck', 'excludeLowVotesCheck', 'excludeShortCheck', 'excludeLowRatingCheck', 'excludeRatedCheck', 'excludeUnreleasedCheck', 'excludeNoImdbCheck'].forEach((id) => { const cb = document.getElementById(id); if (cb) cb.checked = false; });
-        updateExcludeBadge();
-      });
+    // 💡 (오프캔버스 구조로 바뀌면서 쓸모없어진 제외옵션 뱃지 updateExcludeBadge 관련 긴 코드는 완전히 삭제했습니다!)
 
     // 지연 번역 실행
     if (typeof triggerLazyTranslationForVisibleMovies === 'function') {
