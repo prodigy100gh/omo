@@ -2250,11 +2250,6 @@ def all_list(request):
     if '다큐멘터리' in selected_genres:
         exclude_doc = False
 
-    # 💡 [핵심] 검색어가 없을 때만 제외 필터 및 선택 필터를 가동 (검색 시 풀이 잘려나가는 것 완벽 방지!)
-    if not search_query:
-        if exclude_doc and hasattr(base_queryset.model, 'tmdb_genre'):
-            base_queryset = base_queryset.exclude(Q(tmdb_genre__icontains='다큐') | Q(tmdb_genre__icontains='Documentary'))
-
     # =====================================================
     # 💡 [추가] 통합 필터 슬라이더 파라미터 수신
     # =====================================================
