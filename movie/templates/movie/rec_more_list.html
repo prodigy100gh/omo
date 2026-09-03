@@ -208,30 +208,21 @@ document.addEventListener("DOMContentLoaded", function() {
         if (clearBtn) { clearBtn.disabled = (count === 0); } 
     }
 
-    // (3) '제외' 필터(8개) 뱃지 계산
-    const updateExcludeBadge = () => {
-        const cbIds = ['excludeDocCheck', 'excludeNoRatingCheck', 'excludeLowVotesCheck', 'excludeShortCheck', 'excludeLowRatingCheck', 'excludeRatedCheck', 'excludeUnreleasedCheck', 'excludeNoImdbCheck'];
-        let count = 0;
-        cbIds.forEach(id => { const cb = document.getElementById(id); if (cb && cb.checked) count++; });
-        initBadge('exclude-badge', 'btn-clear-exclude', count);
-    };
-
-    // (4) 일반 필터(장르, OTT, 등급, 국가) 뱃지 이벤트 등록
+    // 💡 [핵심 수정] #filter-form -> #unified-filter-form 으로 교체 완료!
     const setupFilterBadge = (nameStr, badgeId, btnId) => {
         const updateFn = () => {
-            const count = document.querySelectorAll(`#filter-form input[name="${nameStr}"]:checked`).length;
+            const count = document.querySelectorAll(`#unified-filter-form input[name="${nameStr}"]:checked`).length;
             initBadge(badgeId, btnId, count);
         };
         updateFn(); 
         
-        document.querySelectorAll(`#filter-form input[name="${nameStr}"]`).forEach(cb => cb.addEventListener('change', updateFn));
+        document.querySelectorAll(`#unified-filter-form input[name="${nameStr}"]`).forEach(cb => cb.addEventListener('change', updateFn));
         
         const clearBtn = document.getElementById(btnId);
         if (clearBtn) {
             clearBtn.addEventListener('click', () => {
-                document.querySelectorAll(`#filter-form input[name="${nameStr}"]`).forEach(cb => cb.checked = false);
+                document.querySelectorAll(`#unified-filter-form input[name="${nameStr}"]`).forEach(cb => cb.checked = false);
                 updateFn();
-                document.getElementById('filter-form').submit(); 
             });
         }
     };
@@ -241,28 +232,14 @@ document.addEventListener("DOMContentLoaded", function() {
     setupFilterBadge('ratings', 'rating-badge', 'btn-clear-rating');
     setupFilterBadge('countries', 'country-badge', 'btn-clear-country');
 
-    updateExcludeBadge();
-    ['excludeDocCheck', 'excludeNoRatingCheck', 'excludeLowVotesCheck', 'excludeShortCheck', 'excludeLowRatingCheck', 'excludeRatedCheck', 'excludeUnreleasedCheck', 'excludeNoImdbCheck'].forEach(id => {
-        const cb = document.getElementById(id);
-        if (cb) cb.addEventListener('change', updateExcludeBadge);
-    });
-
-    const btnClearExclude = document.getElementById('btn-clear-exclude');
-    if (btnClearExclude) {
-        btnClearExclude.addEventListener('click', function() {
-            ['excludeDocCheck', 'excludeNoRatingCheck', 'excludeLowVotesCheck', 'excludeShortCheck', 'excludeLowRatingCheck', 'excludeRatedCheck', 'excludeUnreleasedCheck', 'excludeNoImdbCheck'].forEach(id => {
-                const cb = document.getElementById(id); if (cb) cb.checked = false;
-            });
-            updateExcludeBadge();
-            document.getElementById('filter-form').submit(); 
-        });
-    }
+    // 💡 (통합 오프캔버스 구조로 바뀌면서 쓸모없어진 제외옵션 뱃지 코드들은 완전히 삭제했습니다!)
 
     // (5) 지연 번역기 실행 (공통 스크립트 함수 호출)
     if (typeof window.triggerLazyTranslationForVisibleMovies === 'function') {
         setTimeout(window.triggerLazyTranslationForVisibleMovies, 100);
     }
 });
+
 
 // 💡 1. 필터 조건 100% 유지하며 "정렬"하기
 function applySort(sortValue) {
