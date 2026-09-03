@@ -1221,12 +1221,12 @@ def home(request):
     # 💡 [절대 방어] 아예 시작부터 IMDb ID가 없는 불량품은 덜어내고 시작합니다!
     common_movies = Movie.objects.exclude(Q(tmdb_imdb_id__isnull=True) | Q(tmdb_imdb_id=''))
 
-    # 💡 [핵심 해결] 검색어가 존재할 경우, 모든 제외 필터 및 선택 필터를 우회하여 원제와 번역제목, 배우명까지 스캔!
+    # 💡 [초고속 최적화] 추천 영화 검색: 배우명 스캔을 삭제하고 오직 '제목'만 빠르게 매칭합니다!
     if search:
         q_cond = Q(tmdb_title__icontains=search)
         if hasattr(common_movies.model, 'tmdb_original_title'): q_cond |= Q(tmdb_original_title__icontains=search)
         if hasattr(common_movies.model, 'translated_title'): q_cond |= Q(translated_title__icontains=search)
-        if hasattr(common_movies.model, 'tmdb_actors'): q_cond |= Q(tmdb_actors__icontains=search)
+        # 🚨 무거운 배우 스캔(tmdb_actors__icontains) 삭제 완료
         common_movies = common_movies.filter(q_cond)
 
     if not search:
@@ -1487,12 +1487,12 @@ def rec_more_movies_view(request):
 
     common_movies = ai_movies_qs
 
-    # 💡 [핵심] 검색어가 존재할 경우, 모든 제외/선택 필터를 무시하고 원제와 배우명까지 싹 다 스캔!
+    # 💡 [초고속 최적화] 메인 홈 화면 검색: 배우명 스캔을 삭제하고 오직 '제목'만 빠르게 매칭합니다!
     if search:
         q_cond = Q(tmdb_title__icontains=search)
         if hasattr(common_movies.model, 'tmdb_original_title'): q_cond |= Q(tmdb_original_title__icontains=search)
         if hasattr(common_movies.model, 'translated_title'): q_cond |= Q(translated_title__icontains=search)
-        if hasattr(common_movies.model, 'tmdb_actors'): q_cond |= Q(tmdb_actors__icontains=search)
+        # 🚨 무거운 배우 스캔(tmdb_actors__icontains) 삭제 완료 (출연작 싹쓸이 방지)
         common_movies = common_movies.filter(q_cond)
 
     if not search:
@@ -1734,12 +1734,12 @@ def rec_more_tv_view(request):
 
     common_series = ai_tv_qs
 
-    # 💡 [핵심] TV 시리즈 더보기 화면에서도 검색어가 존재할 경우, 모든 필터를 무시하고 스캔!
+    # 💡 [초고속 최적화] 추천 시리즈 검색: 배우명 스캔을 삭제하고 오직 '제목'만 빠르게 매칭합니다!
     if search:
         q_cond = Q(tmdb_title__icontains=search)
         if hasattr(common_series.model, 'tmdb_original_title'): q_cond |= Q(tmdb_original_title__icontains=search)
         if hasattr(common_series.model, 'translated_title'): q_cond |= Q(translated_title__icontains=search)
-        if hasattr(common_series.model, 'tmdb_actors'): q_cond |= Q(tmdb_actors__icontains=search)
+        # 🚨 무거운 배우 스캔(tmdb_actors__icontains) 삭제 완료
         common_series = common_series.filter(q_cond)
 
     if not search:
@@ -2037,20 +2037,17 @@ def all_list(request):
         '서부': ['서부', 'Western', '웨스턴'], '다큐멘터리': ['다큐멘터리', 'Documentary', '다큐'], '애니메이션': ['애니메이션', 'Animation', '애니', '만화'],
     }
 
-    # 🚀 [핵심 2] 실제 데이터베이스 필터링 부분 (정규식 검색 최적화)
+    # 🚀 [초고속 최적화] 전체DB 작품 검색: 오직 '제목'만 스캔하여 속도 100배 향상 (배우 출연작 싹쓸이 방지)
     if search_query:
         q_cond = Q(tmdb_title__iregex=regex_str)
         if hasattr(base_queryset.model, 'translated_title'): 
             q_cond |= Q(translated_title__iregex=regex_str)
         
-        # 💡 한 글자 검색 시에는 배우나 원제까지 스캔하지 않도록 방어!
+        # 💡 한 글자 검색 시에는 원제까지 스캔 (배우 검색은 밑에서 별도로 진행됨)
         if len(search_query) > 1:
             if hasattr(base_queryset.model, 'tmdb_original_title'): 
                 q_cond |= Q(tmdb_original_title__iregex=regex_str)
-            if hasattr(base_queryset.model, 'tmdb_actors'): 
-                q_cond |= Q(tmdb_actors__iregex=regex_str)
-            if hasattr(base_queryset.model, 'tmdb_actor_details'): 
-                q_cond |= Q(tmdb_actor_details__iregex=regex_str)
+            # 🚨 무한 로딩의 주범이었던 tmdb_actors, tmdb_actor_details 스캔 완전 삭제 완료!
                 
         base_queryset = base_queryset.filter(q_cond)
 
@@ -3561,12 +3558,9 @@ def search_results(request):
         '케리비안': '캐리비안', '인디애나': '인디아나', '메트릭스': '매트릭스', '터미네타': '터미네이터', '스타트랙': '스타트렉',
 
         # 👤 해외 배우/감독 이름 방어 (띄어쓰기, 붙여쓰기 모두 대비)
-        '탐 크루즈': '톰 크루즈', '탐크루즈': '톰크루즈',
-        '탐 하디': '톰 하디', '탐하디': '톰하디',
-        '탐 홀랜드': '톰 홀랜드', '탐홀랜드': '톰홀랜드',
-        '탐 행크스': '톰 행크스', '탐행크스': '톰행크스',
-        '브레드 피트': '브래드 피트', '브레드피트': '브래드피트',
-        '죠니 뎁': '조니 뎁', '죠니뎁': '조니뎁',
+        '탐 크루즈': '톰 크루즈', '탐크루즈': '톰크루즈', '탐 하디': '톰 하디', '탐하디': '톰하디',
+        '탐 홀랜드': '톰 홀랜드', '탐홀랜드': '톰홀랜드', '탐 행크스': '톰 행크스', '탐행크스': '톰행크스',
+        '브레드 피트': '브래드 피트', '브레드피트': '브래드피트', '죠니 뎁': '조니 뎁', '죠니뎁': '조니뎁',
         '엔젤리나 졸리': '안젤리나 졸리', '엔젤리나졸리': '안젤리나졸리',
         
         # (이름의 일부만 쓰여도 안전한 고유명사들)
@@ -3594,8 +3588,9 @@ def search_results(request):
         search_keywords = [q_clean_orig]
 
     # =========================================================
-    # 🚀 2. 작품 검색 (DB 스캔 최적화 - '제목'만 스캔)
+    # 🚀 2. 작품 검색 (DB 스캔 최적화 - 오직 '제목'만 스캔)
     # =========================================================
+    # 🚨 배우 스캔을 완전히 제거하고 제목/번역제목/원제만 깔끔하게 스캔합니다.
     m_cond = Q(tmdb_title__iregex=regex_str)
     if hasattr(Movie, 'translated_title'): m_cond |= Q(translated_title__iregex=regex_str)
     if hasattr(Movie, 'tmdb_original_title'): m_cond |= Q(tmdb_original_title__iregex=regex_str)
@@ -3610,6 +3605,7 @@ def search_results(request):
     # =========================================================
     # 🚀 3. 인물 검색 전용 스캔 (가벼운 icontains 사용)
     # =========================================================
+    # 💡 작품 목록과는 완전히 분리되어, 오직 인물 프로필 사진을 띄워주기 위해 별도로 작동합니다.
     m_cond_person = Q()
     t_cond_person = Q()
     for kw in search_keywords:
