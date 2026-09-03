@@ -264,6 +264,7 @@
                         <div class="col movie-item" style="display: none;"
                              id="movie-card-{{ real_id }}"
                              data-sort-index="{{ forloop.counter }}"
+                             data-movie-year="{{ rating.movie_obj.display_year|default:'0' }}"
                              data-movie-genres="{{ rating.movie_obj.display_genre|default:'' }}"
                              data-movie-otts="{{ rating.movie_obj.display_ott_providers|default:'[]' }}"
                              data-cert-kr="{{ rating.movie_obj.tmdb_certification_kr|default:'' }}"
@@ -298,6 +299,7 @@
                         <div class="col movie-item" style="display: none;"
                              id="watchlist-card-{{ real_id }}"
                              data-sort-index="{{ forloop.counter }}"
+                             data-movie-year="{{ item.movie_obj.display_year|default:'0' }}"
                              data-movie-genres="{{ item.movie_obj.display_genre|default:'' }}"
                              data-movie-otts="{{ item.movie_obj.display_ott_providers|default:'[]' }}"
                              data-cert-kr="{{ item.movie_obj.tmdb_certification_kr|default:'' }}"
@@ -589,12 +591,6 @@
             }
         }
         
-        // 서랍 안의 '초기화' 버튼도 나의 공간 주소로 맞춤 설정
-        const resetBtnOffcanvas = document.querySelector('.offcanvas-footer a.btn-outline-secondary');
-        if (resetBtnOffcanvas) {
-            resetBtnOffcanvas.href = window.location.pathname + '?type=' + (document.getElementById('hidden-type-val')?.value || 'movie') + '&active_tab=' + activeTab;
-        }
-
         // 오프캔버스 서랍 안의 장르/OTT/국가 목록을 내가 평가한 작품들에 맞춰 자동 생성
         const gContainer = document.getElementById('grid-genre');
         if (gContainer) {
@@ -817,7 +813,6 @@
         const selectedGenres = urlParams.getAll('genres'), selectedOtts = urlParams.getAll('otts');
         const selectedCountries = urlParams.getAll('countries');
         
-        // 💡 3대 슬라이더 (평점, 기간, 연령) 수치 로드
         const ratingMin = parseFloat(urlParams.get('rating_min') || '0');
         const ratingMax = parseFloat(urlParams.get('rating_max') || '10');
         const periodMinIdx = parseInt(urlParams.get('period_min_idx') || '0', 10);
@@ -825,13 +820,13 @@
         const ageMinIdx = parseInt(urlParams.get('age_min_idx') || '0', 10);
         const ageMaxIdx = parseInt(urlParams.get('age_max_idx') || '3', 10);
 
-        // 💡 2대 제외 옵션 로드 (폼이 제출되지 않았을 때는 기본적으로 켜둠)
         const filterSubmitted = urlParams.get('filter_submitted') === 'true';
         const excludeDoc = filterSubmitted ? urlParams.get('exclude_doc') === 'on' : true;
         const excludeUnreleased = filterSubmitted ? urlParams.get('exclude_unreleased') === 'on' : true;
         
         const currentYear = new Date().getFullYear();
-        const daysMap = [36500, 15, 10, 5, 3, 2, 1, 0.5, 0.25]; // 슬라이더 인덱스에 대응하는 연수/일수
+        // 💡 [핵심 수정] 나의 공간(프론트엔드) 전용 간소화된 날짜 매핑 배열 적용
+        const yearOffsetMap = [100, 15, 10, 5, 3, 2, 1, 0, 0]; 
 
         filteredRated = []; filteredWatchlist = [];
 
@@ -849,7 +844,6 @@
             let matchesOtt = selectedOtts.length === 0 || selectedOtts.some(o => ottText.includes(o));
             let matchesCountry = selectedCountries.length === 0 || selectedCountries.some(c => countryText.includes(c));
 
-            // [조건 1] 평점 슬라이더 필터링
             const imdbScore = parseFloat(item.getAttribute('data-imdb-score')) || 0;
             let matchesRatingSlider = true;
             if (ratingMin !== 0 || ratingMax !== 10) {
@@ -857,31 +851,30 @@
                 else matchesRatingSlider = (imdbScore >= ratingMin && imdbScore <= ratingMax);
             }
 
-            // [조건 2] 연령 등급 슬라이더 필터링
             let matchesAgeSlider = true;
             if (ageMinIdx !== 0 || ageMaxIdx !== 3) {
                 const allowedAges = ['ALL', '12', '15', '19'].slice(ageMinIdx, ageMaxIdx + 1);
                 matchesAgeSlider = allowedAges.includes(ratingVal) || allowedAges.includes('ALL');
             }
 
-            // [조건 3] 기간 슬라이더 필터링
+            // 💡 [핵심 버그 픽스] html에서 숨겨둔 data-movie-year를 바로 빼서 씁니다!
             let matchesPeriod = true;
             if (periodMinIdx !== 0 || periodMaxIdx !== 8) {
-                const yearText = (item.querySelector('.movie-meta span:not(.text-danger)')?.textContent || '0').replace(/[^0-9]/g, '').substring(0, 4);
+                const yearText = (item.getAttribute('data-movie-year') || '0').replace(/[^0-9]/g, '').substring(0, 4);
                 const itemYear = parseInt(yearText, 10) || 0;
                 if (itemYear > 0) {
-                    const minYear = currentYear - Math.floor(daysMap[periodMinIdx]);
-                    const maxYear = periodMaxIdx === 8 ? 9999 : currentYear - Math.floor(daysMap[periodMaxIdx]);
+                    const minYear = currentYear - yearOffsetMap[periodMinIdx];
+                    const maxYear = periodMaxIdx === 8 ? 9999 : currentYear - yearOffsetMap[periodMaxIdx];
                     matchesPeriod = (itemYear >= minYear && itemYear <= maxYear);
+                } else {
+                    matchesPeriod = false;
                 }
             }
 
-            // [조건 4] 제외 스위치 필터링
             let matchesExclude = true;
             if (excludeDoc && genreText.includes('다큐') && !selectedGenres.includes('다큐멘터리')) matchesExclude = false;
-            if (excludeUnreleased && item.querySelector('.text-danger')) matchesExclude = false; // text-danger는 "예정" 뱃지
+            if (excludeUnreleased && item.querySelector('.text-danger')) matchesExclude = false; 
 
-            // 🚀 모든 관문을 통과한 작품만 렌더링 풀에 합류시킵니다!
             if (matchesSearch && matchesGenre && matchesOtt && matchesCountry && matchesRatingSlider && matchesAgeSlider && matchesPeriod && matchesExclude) {
                 if (item.closest('#rated-content')) filteredRated.push(item);
                 else if (item.closest('#watchlist-content')) filteredWatchlist.push(item);
