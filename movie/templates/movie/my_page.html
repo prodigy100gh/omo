@@ -178,81 +178,16 @@
             </div>
         </div>
 
-        <!-- 2번째 줄: 3대 정렬 버튼 및 4대 필터 드롭다운 -->
+        <!-- 2번째 줄: 3대 정렬 버튼 및 통합 오프캔버스 필터 호출 -->
         <div class="d-flex flex-row justify-content-between align-items-center gap-1 flex-wrap flex-sm-nowrap" style="padding-top: 6px;">
             <div class="d-flex gap-1 flex-shrink-0 flex-nowrap align-items-center">
                 <a role="button" class="btn btn-sm text-secondary bg-white border sort-btn" data-sort="imdb-score" onclick="sortMovies('imdb-score')" style="width: 105px !important; border-radius: 6px; font-size: 12px; border-color: #e2e8f0 !important;">🎬 IMDb평점 순</a>
                 <a role="button" class="btn btn-sm text-secondary bg-white border sort-btn" data-sort="my-score" onclick="sortMovies('my-score')" style="width: 85px !important; border-radius: 6px; font-size: 12px; border-color: #e2e8f0 !important;">★ 내평점 순</a>
                 <a role="button" class="btn btn-sm text-secondary bg-white border sort-btn" data-sort="vote-count" onclick="sortMovies('vote-count')" style="width: 85px !important; border-radius: 6px; font-size: 12px; border-color: #e2e8f0 !important;">📊 평가수 순</a>
             </div>
-
-            <form method="GET" action="" id="filter-form" class="d-flex align-items-center gap-1 m-0 p-0 justify-content-end flex-nowrap">
-                <input type="hidden" name="type" id="filter-form-type-val" value="{{ current_type|default:'movie' }}">
-                <input type="hidden" name="filter_submitted" value="true">
-                <input type="hidden" name="active_tab" class="active-tab-field" value="{{ active_tab|default:'rated' }}">
-                <input type="hidden" name="sort" id="form-sort-val" value="{{ sort_by|default:'latest-desc' }}">
-                {% if search_query %}<input type="hidden" name="search" value="{{ search_query }}">{% endif %}
-
-                <!-- OTT 필터 -->
-                <div class="dropdown filter-dropdown-wrapper">
-                    <button class="btn btn-white bg-white border dropdown-toggle btn-sm fw-bold filter-dropdown-button" type="button" id="ottDropdown" data-bs-toggle="dropdown" data-bs-auto-close="outside" style="border-radius: 6px;">
-                        <span>📺 OTT</span><span class="badge bg-secondary ms-1 d-none" id="ott-badge" style="font-size: 10px;">0</span>
-                    </button>
-                    <ul class="dropdown-menu ott-dropdown-menu dropdown-menu-end" aria-labelledby="ottDropdown" id="ott-list-container">
-                        <div class="ott-grid-container" id="ott-grid-container"></div>
-                        <hr class="dropdown-divider my-2">
-                        <div class="px-1 d-flex gap-2">
-                            <button type="button" id="btn-clear-ott" class="btn btn-sm btn-outline-secondary w-50" style="font-size: 12px; border-radius: 6px; font-weight: 600;" disabled>모두 취소</button>
-                            <button type="submit" class="btn btn-sm btn-dark w-50 py-1.5" style="font-size: 12px; border-radius: 6px; background-color: #334155; border: none; font-weight: 600;">적용</button>
-                        </div>
-                    </ul>
-                </div>
-
-                <!-- 장르 필터 -->
-                <div class="dropdown filter-dropdown-wrapper">
-                    <button class="btn btn-white bg-white border dropdown-toggle btn-sm fw-bold filter-dropdown-button" type="button" id="genreDropdown" data-bs-toggle="dropdown" data-bs-auto-close="outside" style="border-radius: 6px;">
-                        <span>📂 장르</span><span class="badge bg-secondary ms-1 d-none" id="genre-badge" style="font-size: 10px;">0</span>
-                    </button>
-                    <ul class="dropdown-menu filter-dropdown-menu dropdown-menu-end" aria-labelledby="genreDropdown" id="genre-list-container">
-                        <div class="filter-grid-container" id="genre-grid-container"></div>
-                        <hr class="dropdown-divider my-2">
-                        <div class="px-1 d-flex gap-2">
-                            <button type="button" id="btn-clear-genre" class="btn btn-sm btn-outline-secondary w-50" style="font-size: 12px; border-radius: 6px; font-weight: 600;" disabled>모두 취소</button>
-                            <button type="submit" class="btn btn-sm btn-dark w-50 py-1.5" style="font-size: 12px; border-radius: 6px; background-color: #334155; border: none; font-weight: 600;">적용</button>
-                        </div>
-                    </ul>
-                </div>
-
-                <!-- 연령 필터 -->
-                <div class="dropdown filter-dropdown-wrapper">
-                    <button class="btn btn-white bg-white border dropdown-toggle btn-sm fw-bold filter-dropdown-button" type="button" id="ratingDropdown" data-bs-toggle="dropdown" data-bs-auto-close="outside" style="border-radius: 6px;">
-                        <span>🔞 연령</span><span class="badge bg-secondary ms-1 d-none" id="rating-badge" style="font-size: 10px;">0</span>
-                    </button>
-                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="ratingDropdown" id="rating-list-container" style="padding: 12px !important; min-width: 190px !important; border: 1px solid #e2e8f0; border-radius: 12px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08);">
-                        <div class="d-flex flex-column gap-1" id="rating-grid-container"></div>
-                        <hr class="dropdown-divider my-2">
-                        <div class="px-1 d-flex gap-2">
-                            <button type="button" id="btn-clear-rating" class="btn btn-sm btn-outline-secondary w-50 text-nowrap" style="font-size: 12px; border-radius: 6px; font-weight: 600;" disabled>모두 취소</button>
-                            <button type="submit" class="btn btn-sm btn-dark w-50 py-1.5 text-nowrap" style="font-size: 12px; border-radius: 6px; background-color: #334155; border: none; font-weight: 600;">적용</button>
-                        </div>
-                    </ul>
-                </div>
-
-                <!-- 국가 필터 -->
-                <div class="dropdown filter-dropdown-wrapper">
-                    <button class="btn btn-white bg-white border dropdown-toggle btn-sm fw-bold filter-dropdown-button" type="button" id="countryDropdown" data-bs-toggle="dropdown" data-bs-auto-close="outside" style="border-radius: 6px;">
-                        <span>🌍 국가</span><span class="badge bg-secondary ms-1 d-none" id="country-badge" style="font-size: 10px;">0</span>
-                    </button>
-                    <ul class="dropdown-menu filter-dropdown-menu dropdown-menu-end" aria-labelledby="countryDropdown" id="country-list-container">
-                        <div class="filter-grid-container" id="country-grid-container"></div>
-                        <hr class="dropdown-divider my-2">
-                        <div class="px-1 d-flex gap-2">
-                            <button type="button" id="btn-clear-country" class="btn btn-sm btn-outline-secondary w-50" style="font-size: 12px; border-radius: 6px; font-weight: 600;" disabled>모두 취소</button>
-                            <button type="submit" class="btn btn-sm btn-dark w-50 py-1.5" style="font-size: 12px; border-radius: 6px; background-color: #334155; border: none; font-weight: 600;">적용</button>
-                        </div>
-                    </ul>
-		</div>
-            </form>
+            
+            <!-- 💡 전체DB에서 쓰던 완벽한 통합 필터를 동일하게 장착! -->
+            {% include 'partials/comp_filter_menu.html' %}
         </div>
     </div>
 </header>
@@ -635,22 +570,45 @@
             return indexA - indexB;
         });
 
+	// ==============================================================
+        // 🚀 통합 오프캔버스 필터 호환용 URL 및 Grid 동적 생성
+        // ==============================================================
         const urlParams = new URLSearchParams(window.location.search);
         const selectedGenres = urlParams.getAll('genres'), selectedOtts = urlParams.getAll('otts');
-        const selectedRatings = urlParams.getAll('ratings'), selectedCountries = urlParams.getAll('countries');
-        
-        let genreCheckedCount = 0, ottCheckedCount = 0, ratingCheckedCount = 0, countryCheckedCount = 0;
+        const selectedCountries = urlParams.getAll('countries');
 
-        const gContainer = document.getElementById('genre-grid-container');
+        const unifiedForm = document.getElementById('unified-filter-form');
+        if (unifiedForm) {
+            // 통합 필터 폼이 현재 나의 공간(my_page) 주소로 데이터를 쏘도록 가로챕니다!
+            unifiedForm.action = window.location.pathname; 
+            if (!unifiedForm.querySelector('input[name="active_tab"]')) {
+                const input = document.createElement('input');
+                input.type = 'hidden'; input.name = 'active_tab';
+                input.className = 'active-tab-field'; input.value = activeTab;
+                unifiedForm.appendChild(input);
+            }
+        }
+        
+        // 서랍 안의 '초기화' 버튼도 나의 공간 주소로 맞춤 설정
+        const resetBtnOffcanvas = document.querySelector('.offcanvas-footer a.btn-outline-secondary');
+        if (resetBtnOffcanvas) {
+            resetBtnOffcanvas.href = window.location.pathname + '?type=' + (document.getElementById('hidden-type-val')?.value || 'movie') + '&active_tab=' + activeTab;
+        }
+
+        // 오프캔버스 서랍 안의 장르/OTT/국가 목록을 내가 평가한 작품들에 맞춰 자동 생성
+        const gContainer = document.getElementById('grid-genre');
         if (gContainer) {
             gContainer.innerHTML = '';
-            sortedGenres.forEach((genre, idx) => {
-                const isChecked = selectedGenres.includes(genre); if (isChecked) genreCheckedCount++;
-                gContainer.innerHTML += `<div class="filter-item m-0"><input class="form-check-input filter-cb" type="checkbox" name="genres" value="${genre}" id="genre-${idx}" ${isChecked ? 'checked' : ''}><label class="filter-label-text" for="genre-${idx}">${genre}</label></div>`;
+            sortedGenres.forEach((genre) => {
+                const isChecked = selectedGenres.includes(genre);
+                gContainer.innerHTML += `<label class="grid-item form-check bg-white rounded-3 py-2 px-1 m-0 border d-flex align-items-center shadow-sm" style="cursor: pointer;">
+                    <input class="form-check-input ms-1 me-2 m-0 genre-cb" type="checkbox" name="genres" value="${genre}" ${isChecked ? 'checked' : ''}>
+                    <span class="small text-dark fw-medium text-nowrap" style="font-size: 12px; letter-spacing: -0.3px;">${genre}</span>
+                </label>`;
             });
         }
 
-        const oContainer = document.getElementById('ott-grid-container');
+        const oContainer = document.getElementById('grid-ott');
         if (oContainer) {
             oContainer.innerHTML = '';
             const ottNameKr = {
@@ -658,58 +616,37 @@
                 'Wavve': '웨이브', 'wavve': '웨이브', 'TVING': '티빙', 'tving': '티빙', 'Watcha': '왓챠', 'watcha': '왓챠',
                 'Apple TV': '애플 TV+', 'Apple TV Plus': '애플 TV+', 'Apple TV+': '애플 TV+', 'Amazon Prime Video': '아마존 프라임', 'Coupang Play': '쿠팡플레이'
             };
-            sortedOtts.forEach((ott, idx) => {
-                const isChecked = selectedOtts.includes(ott); if (isChecked) ottCheckedCount++;
-                oContainer.innerHTML += `<div class="filter-item m-0" style="padding-left: 24px;"><input class="form-check-input filter-cb" type="checkbox" name="otts" value="${ott}" id="ott-${idx}" ${isChecked ? 'checked' : ''}><label class="filter-label-text d-flex align-items-center gap-1.5" for="ott-${idx}"><img src="${ottMap[ott]}" style="width: 16px; height: 16px; border-radius: 4px; object-fit: cover;" alt="${ott}"><span style="margin-left: 5px;">${ottNameKr[ott] || ott}</span></label></div>`;
+            sortedOtts.forEach((ott) => {
+                const isChecked = selectedOtts.includes(ott);
+                oContainer.innerHTML += `<label class="grid-item form-check bg-white rounded-3 py-2 px-1 m-0 border d-flex align-items-center shadow-sm" style="cursor: pointer;">
+                    <input class="form-check-input ms-1 me-2 m-0" type="checkbox" name="otts" value="${ott}" ${isChecked ? 'checked' : ''}>
+                    <img src="${ottMap[ott]}" style="width: 16px; height: 16px; border-radius: 4px; object-fit: cover;" alt="${ott}">
+                    <span class="ms-1 small text-dark fw-medium text-nowrap" style="font-size: 12px; letter-spacing: -0.3px;">${ottNameKr[ott] || ott}</span>
+                </label>`;
             });
         }
 
-        const rContainer = document.getElementById('rating-grid-container');
-        if (rContainer) {
-            rContainer.innerHTML = '';
-            const fixedRatings = [{ val: 'ALL', label: '전체관람가' }, { val: '12', label: '12세' }, { val: '15', label: '15세' }, { val: '19', label: '19세' }, { val: '정보 없음', label: '정보 없음' }];
-            fixedRatings.filter(rating => ratingSet.has(rating.val)).forEach((rating, idx) => {
-                const isChecked = selectedRatings.includes(rating.val); if (isChecked) ratingCheckedCount++;
-                rContainer.innerHTML += `<div class="filter-item m-0"><input class="form-check-input filter-cb" type="checkbox" name="ratings" value="${rating.val}" id="rating-${idx}" ${isChecked ? 'checked' : ''}><label class="filter-label-text" for="rating-${idx}">${rating.label}</label></div>`;
-            });
-        }
-
-        const cContainer = document.getElementById('country-grid-container');
+        const cContainer = document.getElementById('grid-country');
         if (cContainer) {
             cContainer.innerHTML = '';
-            sortedCountries.forEach((country, idx) => {
-                const isChecked = selectedCountries.includes(country); if (isChecked) countryCheckedCount++;
-                cContainer.innerHTML += `<div class="filter-item m-0"><input class="form-check-input filter-cb" type="checkbox" name="countries" value="${country}" id="country-${idx}" ${isChecked ? 'checked' : ''}><label class="filter-label-text" for="country-${idx}">${country}</label></div>`;
+            sortedCountries.forEach((country) => {
+                const isChecked = selectedCountries.includes(country);
+                cContainer.innerHTML += `<label class="grid-item form-check bg-white rounded-3 py-2 px-1 m-0 border d-flex align-items-center shadow-sm" style="cursor: pointer;">
+                    <input class="form-check-input ms-1 me-2 m-0" type="checkbox" name="countries" value="${country}" ${isChecked ? 'checked' : ''}>
+                    <span class="small text-dark fw-medium text-nowrap" style="font-size: 12px; letter-spacing: -0.3px;">${country}</span>
+                </label>`;
             });
         }
-
-        function initBadge(badgeId, clearBtnId, count) {
-            const badge = document.getElementById(badgeId), clearBtn = document.getElementById(clearBtnId);
-            if (badge) { count > 0 ? (badge.textContent = count, badge.classList.remove('d-none')) : badge.classList.add('d-none'); }
-            if (clearBtn) clearBtn.disabled = (count === 0);
-        }
-        initBadge('genre-badge', 'btn-clear-genre', genreCheckedCount); initBadge('ott-badge', 'btn-clear-ott', ottCheckedCount);
-        initBadge('rating-badge', 'btn-clear-rating', ratingCheckedCount); initBadge('country-badge', 'btn-clear-country', countryCheckedCount);
-
-        applyFrontendFilteringAndPagination();
-
-        const setupClearBtn = (btnId, nameStr, badgeId) => {
-            const btn = document.getElementById(btnId);
-            if (btn) btn.addEventListener('click', function() {
-                document.querySelectorAll(`#filter-form input[name="${nameStr}"]`).forEach(cb => cb.checked = false);
-                initBadge(badgeId, btnId, 0); document.getElementById('filter-form').submit(); 
+        
+        // 다큐멘터리 장르 선택 시 '제외 옵션' 강제 해제 연동
+        document.querySelectorAll('.genre-cb').forEach(cb => {
+            cb.addEventListener('change', function() {
+                const excludeDocCb = document.getElementById('exc-doc');
+                if (this.value === '다큐멘터리' && this.checked && excludeDocCb) { excludeDocCb.checked = false; }
             });
-        };
-        setupClearBtn('btn-clear-ott', 'otts', 'ott-badge'); setupClearBtn('btn-clear-genre', 'genres', 'genre-badge');
-        setupClearBtn('btn-clear-rating', 'ratings', 'rating-badge'); setupClearBtn('btn-clear-country', 'countries', 'country-badge');
+        });
 
-        const setupBadgeUpdate = (nameStr, badgeId, btnId) => {
-            document.querySelectorAll(`#filter-form input[name="${nameStr}"]`).forEach(cb => {
-                cb.addEventListener('change', () => { initBadge(badgeId, btnId, document.querySelectorAll(`#filter-form input[name="${nameStr}"]:checked`).length); });
-            });
-        };
-        setupBadgeUpdate('genres', 'genre-badge', 'btn-clear-genre'); setupBadgeUpdate('otts', 'ott-badge', 'btn-clear-ott');
-        setupBadgeUpdate('ratings', 'rating-badge', 'btn-clear-rating'); setupBadgeUpdate('countries', 'country-badge', 'btn-clear-country');
+        applyFrontendFilteringAndPagination();  
 
         sortMovies('latest', 'desc');
 
@@ -873,12 +810,28 @@
     });
 
         
-    /* ================= [12. 클라이언트 사이드 필터링 및 무한 스크롤 렌더링 로직] ================= */
+    /* ================= [12. 클라이언트 사이드 (통합 슬라이더 지원) 필터링 및 무한 스크롤] ================= */
     function applyFrontendFilteringAndPagination() {
         const urlParams = new URLSearchParams(window.location.search);
         const searchQuery = (urlParams.get('search') || '').toLowerCase().trim();
         const selectedGenres = urlParams.getAll('genres'), selectedOtts = urlParams.getAll('otts');
-        const selectedRatings = urlParams.getAll('ratings'), selectedCountries = urlParams.getAll('countries');
+        const selectedCountries = urlParams.getAll('countries');
+        
+        // 💡 3대 슬라이더 (평점, 기간, 연령) 수치 로드
+        const ratingMin = parseFloat(urlParams.get('rating_min') || '0');
+        const ratingMax = parseFloat(urlParams.get('rating_max') || '10');
+        const periodMinIdx = parseInt(urlParams.get('period_min_idx') || '0', 10);
+        const periodMaxIdx = parseInt(urlParams.get('period_max_idx') || '8', 10);
+        const ageMinIdx = parseInt(urlParams.get('age_min_idx') || '0', 10);
+        const ageMaxIdx = parseInt(urlParams.get('age_max_idx') || '3', 10);
+
+        // 💡 2대 제외 옵션 로드 (폼이 제출되지 않았을 때는 기본적으로 켜둠)
+        const filterSubmitted = urlParams.get('filter_submitted') === 'true';
+        const excludeDoc = filterSubmitted ? urlParams.get('exclude_doc') === 'on' : true;
+        const excludeUnreleased = filterSubmitted ? urlParams.get('exclude_unreleased') === 'on' : true;
+        
+        const currentYear = new Date().getFullYear();
+        const daysMap = [36500, 15, 10, 5, 3, 2, 1, 0.5, 0.25]; // 슬라이더 인덱스에 대응하는 연수/일수
 
         filteredRated = []; filteredWatchlist = [];
 
@@ -894,10 +847,42 @@
             const matchesSearch = searchQuery === '' || origTitle.includes(searchQuery) || transTitle.includes(searchQuery) || currentUI.includes(searchQuery);
             let matchesGenre = selectedGenres.length === 0 || selectedGenres.some(g => genreText.includes(g));
             let matchesOtt = selectedOtts.length === 0 || selectedOtts.some(o => ottText.includes(o));
-            let matchesRating = selectedRatings.length === 0 || selectedRatings.includes(ratingVal);
             let matchesCountry = selectedCountries.length === 0 || selectedCountries.some(c => countryText.includes(c));
 
-            if (matchesSearch && matchesGenre && matchesOtt && matchesRating && matchesCountry) {
+            // [조건 1] 평점 슬라이더 필터링
+            const imdbScore = parseFloat(item.getAttribute('data-imdb-score')) || 0;
+            let matchesRatingSlider = true;
+            if (ratingMin !== 0 || ratingMax !== 10) {
+                if (ratingMin === 0 && imdbScore === 0) matchesRatingSlider = true;
+                else matchesRatingSlider = (imdbScore >= ratingMin && imdbScore <= ratingMax);
+            }
+
+            // [조건 2] 연령 등급 슬라이더 필터링
+            let matchesAgeSlider = true;
+            if (ageMinIdx !== 0 || ageMaxIdx !== 3) {
+                const allowedAges = ['ALL', '12', '15', '19'].slice(ageMinIdx, ageMaxIdx + 1);
+                matchesAgeSlider = allowedAges.includes(ratingVal) || allowedAges.includes('ALL');
+            }
+
+            // [조건 3] 기간 슬라이더 필터링
+            let matchesPeriod = true;
+            if (periodMinIdx !== 0 || periodMaxIdx !== 8) {
+                const yearText = (item.querySelector('.movie-meta span:not(.text-danger)')?.textContent || '0').replace(/[^0-9]/g, '').substring(0, 4);
+                const itemYear = parseInt(yearText, 10) || 0;
+                if (itemYear > 0) {
+                    const minYear = currentYear - Math.floor(daysMap[periodMinIdx]);
+                    const maxYear = periodMaxIdx === 8 ? 9999 : currentYear - Math.floor(daysMap[periodMaxIdx]);
+                    matchesPeriod = (itemYear >= minYear && itemYear <= maxYear);
+                }
+            }
+
+            // [조건 4] 제외 스위치 필터링
+            let matchesExclude = true;
+            if (excludeDoc && genreText.includes('다큐') && !selectedGenres.includes('다큐멘터리')) matchesExclude = false;
+            if (excludeUnreleased && item.querySelector('.text-danger')) matchesExclude = false; // text-danger는 "예정" 뱃지
+
+            // 🚀 모든 관문을 통과한 작품만 렌더링 풀에 합류시킵니다!
+            if (matchesSearch && matchesGenre && matchesOtt && matchesCountry && matchesRatingSlider && matchesAgeSlider && matchesPeriod && matchesExclude) {
                 if (item.closest('#rated-content')) filteredRated.push(item);
                 else if (item.closest('#watchlist-content')) filteredWatchlist.push(item);
             } else {
